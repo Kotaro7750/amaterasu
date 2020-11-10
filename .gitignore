@@ -1,0 +1,7 @@
+*.o
+*.bin
+*.map
+/fs/*
+!/fs/EFI
+/fs/EFI/BOOT/*
+!/fs/EFI/BOOT/.gitkeep
