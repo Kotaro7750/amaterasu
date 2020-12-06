@@ -76,8 +76,20 @@ void gdtInit() {
                : [ selector ] "m"(segmentSelector));
 }
 
+void EnableCPUInterrupt(void){
+  asm volatile ("sti");
+}
+
 unsigned char InByte(unsigned short addr){
   unsigned char data;
   asm volatile("in %[addr], %[data]": [data]"=a"(data) : [addr]"d"(addr));
   return data;
+}
+
+void OutByte(unsigned short addr, unsigned char data){
+  asm volatile("out %[data], %[addr]": :[addr]"d"(addr),[data]"a"(data));
+}
+
+void CpuHalt(void){
+  asm volatile("hlt");
 }

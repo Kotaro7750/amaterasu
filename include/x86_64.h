@@ -16,5 +16,8 @@ unsigned long long CalcGDTEntry(unsigned long long base,
                                 unsigned long long Flags);
 
 void gdtInit();
+void EnableCPUInterrupt(void);
 unsigned char InByte(unsigned short addr);
+void OutByte(unsigned short addr, unsigned char data);
+void CpuHalt(void);
 #endif

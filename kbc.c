@@ -1,7 +1,10 @@
 #include "include/kbc.h"
+#include "include/graphic.h"
+#include "include/interrupt.h"
+#include "include/pic.h"
 #include "include/x86_64.h"
 
-const char KeyMap[] = {
+const char keyMap[] = {
     0x00, ASCII_ESC, '1',  '2',  '3',      '4',      '5',  '6',  '7',  '8',
     '9',  '0',       '-',  '^',  ASCII_BS, ASCII_HT, 'q',  'w',  'e',  'r',
     't',  'y',       'u',  'i',  'o',      'p',      '@',  '[',  '\n', 0x00,
@@ -15,6 +18,15 @@ const char KeyMap[] = {
     0x00, 0x00,      0x00, 0x00, 0x00,     0x00,     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00,      0x00, 0x00, 0x00,     '_',      0x00, 0x00, 0x00, 0x00,
     0x00, 0x00,      0x00, 0x00, 0x00,     '\\',     0x00, 0x00};
+
+void KBCHandler(void);
+
+void KBCInit(void) {
+  void *handler;
+  asm volatile("lea KBCHandler, %[handler]" : [ handler ] "=r"(handler));
+  SetInterruptDescriptor(33, handler, 1);
+  EnableInterruptOnPIC(33);
+}
 
 unsigned char GetKBCData(void) {
   // wait until Output Buffer Full
@@ -33,6 +45,24 @@ unsigned char GetKeyCode(void) {
   return keyData;
 }
 
-char getc(void){
-  return KeyMap[GetKeyCode()];
+char getc(void) { return keyMap[GetKeyCode()]; }
+
+void doKBCInterrupt(void) {
+  if (!(InByte(KBC_CONTROLLER_ADDRESS) & KBC_STATUS_OBF_MASK))
+    goto kbc_exit;
+
+  unsigned char keyCode = InByte(KBC_ENCODER_ADDRESS);
+  if (keyCode & KBC_DATA_MAKE_MASK)
+    goto kbc_exit;
+
+  char c = keyMap[keyCode];
+  if (('a' <= c) && (c <= 'z'))
+    c = c - 'a' + 'A';
+  else if (c == '\n')
+    putc('\r');
+  putc(c);
+
+kbc_exit:
+  // TODO magic number
+  SendEndOfInterrupt(33);
 }

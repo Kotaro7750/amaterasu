@@ -1,6 +1,8 @@
 #include "include/fb.h"
 #include "include/graphic.h"
+#include "include/interrupt.h"
 #include "include/kbc.h"
+#include "include/pic.h"
 #include "include/x86_64.h"
 
 void start_kernel(void *_t __attribute__((unused)), struct FrameBuffer *_fb,
@@ -10,15 +12,12 @@ void start_kernel(void *_t __attribute__((unused)), struct FrameBuffer *_fb,
   gdtInit();
   GraphicInit();
 
-  // puts("ABCDE\nFG");
-  while (1) {
-    char c = getc();
-    if (('a' <= c) && (c <= 'z'))
-      c = c - 'a' + 'A';
-    else if (c == '\n')
-      putc('\r');
-    putc(c);
-  }
+  idtInit();
+  picInit();
+  KBCInit();
+
+  EnableCPUInterrupt();
+
   while (1)
-    ;
+    CpuHalt();
 }

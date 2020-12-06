@@ -3,7 +3,7 @@ BOOTLOADER = fs/EFI/BOOT/BOOTX64.EFI
 CFLAGS = -Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-common 
 LDFLAGS = -Map kernel.map -s -x -T kernel.ld
 
-$(TARGET):main.o fb.o graphic.o font.o x86_64.o kbc.o
+$(TARGET):main.o fb.o graphic.o font.o x86_64.o kbc.o interrupt.o pic.o handler.o
 	ld $(LDFLAGS) -o $@ $+
 
 %.o: %.c
