@@ -24,7 +24,7 @@ run:$(TARGET) $(BOOTLOADER)
 debug-run:$(TARGET) $(BOOTLOADER)
 	cp $(TARGET) ./fs/
 	cp boot.conf ./fs/
-	qemu-system-x86_64 -nographic -m 4G -bios OVMF.fd -hda fat:rw:fs -boot c
+	qemu-system-x86_64 -m 4G -bios OVMF.fd -hda fat:rw:fs -boot c -d int -s -S
 
 clean:
 	rm -f *~ *.o *.map ./fs/$(TARGET) $(TARGET) include/*~

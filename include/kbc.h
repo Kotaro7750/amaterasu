@@ -7,6 +7,8 @@
 #define KBC_STATUS_OBF_MASK 0x1
 #define KBC_DATA_MAKE_MASK 0x80
 
+#define KBC_INTERRUPT_NUM 33
+
 #define ASCII_ESC 0x1b
 #define ASCII_BS 0x08
 #define ASCII_HT 0x09

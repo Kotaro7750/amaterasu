@@ -24,8 +24,8 @@ void KBCHandler(void);
 void KBCInit(void) {
   void *handler;
   asm volatile("lea KBCHandler, %[handler]" : [ handler ] "=r"(handler));
-  SetInterruptDescriptor(33, handler, 1);
-  EnableInterruptOnPIC(33);
+  SetInterruptDescriptor(KBC_INTERRUPT_NUM, handler, 1);
+  EnableInterruptOnPIC(KBC_INTERRUPT_NUM);
 }
 
 unsigned char GetKBCData(void) {
@@ -63,6 +63,5 @@ void doKBCInterrupt(void) {
   putc(c);
 
 kbc_exit:
-  // TODO magic number
-  SendEndOfInterrupt(33);
+  SendEndOfInterrupt(KBC_INTERRUPT_NUM);
 }

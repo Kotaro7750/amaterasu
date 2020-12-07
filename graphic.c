@@ -5,8 +5,8 @@
 unsigned int cursorX;
 unsigned int cursorY;
 
-void GraphicInit() { 
-  SetBackGround(BG_RED, BG_GREEN, BG_BLUE); 
+void GraphicInit() {
+  SetBackGround(BG_RED, BG_GREEN, BG_BLUE);
   cursorX = 0;
   cursorY = 0;
 }
@@ -36,21 +36,6 @@ void putc(unsigned char c) {
     }
     cursorX += FONT_WIDTH;
   }
-  //if ('A' <= c && c <= 'Z') {
-  //  for (unsigned int x = 0; x < FONT_WIDTH; x++) {
-  //    for (unsigned int y = 0; y < FONT_HEIGHT; y++) {
-  //      if (fontBitMap[c][y][x]) {
-  //        DrawPixel(cursorX + x, cursorY + y, FG_RED, FG_GREEN, FG_BLUE);
-  //      } else {
-  //        DrawPixel(cursorX + x, cursorY + y, BG_RED, BG_GREEN, BG_BLUE);
-  //      }
-  //    }
-  //  }
-  //  cursorX += FONT_WIDTH;
-  //} else if (c == '\n') {
-  //  cursorX = 0;
-  //  cursorY += FONT_HEIGHT;
-  //}
 }
 
 void puts(unsigned char *str) {
@@ -59,4 +44,27 @@ void puts(unsigned char *str) {
     putc(c);
     str++;
   }
+}
+
+void puth(unsigned long long num) {
+  int i = 0;
+  unsigned char str[UNUM64_STR_LEN + 1];
+  for (i = 0; i<UNUM64_STR_LEN; i++) {
+    str[i] = '0';
+  }
+  str[UNUM64_STR_LEN] = '\0';
+
+  i = UNUM64_STR_LEN - 1;
+  while (num != 0) {
+    unsigned char remainder = num & 0xf;
+    num = num >> 4;
+    if (remainder >= 10) {
+      str[i] = 'A' + remainder - 10;
+    } else {
+      str[i] = '0' + remainder;
+    }
+    i--;
+  }
+
+  puts(str);
 }
