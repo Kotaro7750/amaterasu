@@ -1,11 +1,15 @@
 #include "include/interrupt.h"
+#include "include/graphic.h"
+#include "include/x86_64.h"
 
 struct InterruptDescriptor idt[MAX_INTR_NUM];
 unsigned long long idtr[2];
 
 void DefaultHandler(void);
+void DoubleFaultHandlerASM(void);
 
-void SetInterruptDescriptor(unsigned char interruptNumber, void* handler, unsigned int present){
+void SetInterruptDescriptor(unsigned char interruptNumber, void *handler,
+                            unsigned int present) {
   idt[interruptNumber].Offset0_15 = (unsigned long long)handler;
   // TODO this magic number should be MACRO.
   // kernel code segment
@@ -23,13 +27,27 @@ void SetInterruptDescriptor(unsigned char interruptNumber, void* handler, unsign
   idt[interruptNumber].Offset32_63 = (unsigned long long)handler >> 32;
 }
 
-void idtInit(){
+void idtInit() {
+  void *handler;
+  asm volatile("lea DefaultHandler, %[handler]" : [ handler ] "=r"(handler));
+
   for (int i = 0; i < MAX_INTR_NUM; i++) {
-    SetInterruptDescriptor(i, DefaultHandler,0);
+    SetInterruptDescriptor(i, handler, 0);
   }
+
+  asm volatile("lea DoubleFaultHandlerASM, %[handler]"
+               : [ handler ] "=r"(handler));
+  SetInterruptDescriptor(DOUBLE_FAULT_EXCP_NUM, handler, 1);
 
   // load idt to idtr
   idtr[0] = ((unsigned long long)idt << 16) | ((sizeof(idt) - 1) & 0xffff);
   idtr[1] = (unsigned long long)idt >> 48;
   asm volatile("lidt idtr");
+}
+
+void DoubleFaultHandler(void) {
+  puts("DOUBLE FAULT\n");
+  while (1) {
+    CpuHalt();
+  }
 }

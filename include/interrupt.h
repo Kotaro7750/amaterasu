@@ -3,6 +3,9 @@
 
 #define MAX_INTR_NUM 256
 
+#define DOUBLE_FAULT_EXCP_NUM 8
+#define PAGE_FAULT_EXCP_NUM 14
+
 struct InterruptDescriptor {
   unsigned short Offset0_15;
   unsigned short SegmentSelector;
