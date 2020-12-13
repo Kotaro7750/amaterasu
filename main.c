@@ -3,11 +3,11 @@
 #include "include/interrupt.h"
 #include "include/kbc.h"
 #include "include/paging.h"
+#include "include/physicalMemory.h"
 #include "include/pic.h"
 #include "include/x86_64.h"
 
-void start_kernel(void *_t __attribute__((unused)), struct FrameBuffer *_fb,
-                  void *_fs_start __attribute__((unused))) {
+void start_kernel(void *_t __attribute__((unused)), struct FrameBuffer *_fb, struct PhysicalMemoryFreeMapInfo *freeMapInfo) {
 
   FBInit(_fb);
   gdtInit();
@@ -18,22 +18,16 @@ void start_kernel(void *_t __attribute__((unused)), struct FrameBuffer *_fb,
   KBCInit();
 
   PagingInit();
+  PhysicalMemoryManagementInit(*freeMapInfo);
 
   EnableCPUInterrupt();
 
   unsigned long long cr3 = GetCR3();
-  puth(cr3);
-  puts("\n");
   struct L4PTEntry *pt4 = (struct L4PTEntry *)cr3;
 
-  unsigned long long dummy[512];
-  unsigned long long addr;
-  for (int i = 0; i < 512; i++) {
-    addr = &(dummy[i]);
-    if ((addr & 0xfff) == 0) {
-      break;
-    }
-  }
+  unsigned long long addr = AllocateSinglePageFrame();
+  puth(addr);
+  puts("\n");
 
   ((struct L4PTEntry *)addr)[0] = pt4[0];
   asm volatile("mov %[value], %%cr3" ::[value] "r"(addr));

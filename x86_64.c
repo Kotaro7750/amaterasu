@@ -1,9 +1,7 @@
 #include "include/x86_64.h"
 
-unsigned char CALC_ACCESS_BYTE(unsigned char Pr, unsigned char Priv,
-                               unsigned char S, unsigned char Ex,
-                               unsigned char DC, unsigned char RW,
-                               unsigned char Ac) {
+unsigned char
+CALC_ACCESS_BYTE(unsigned char Pr, unsigned char Priv, unsigned char S, unsigned char Ex, unsigned char DC, unsigned char RW, unsigned char Ac) {
   unsigned char AccessByte = 0;
   AccessByte |= 0x1 & Ac;
   AccessByte |= 0x2 & (RW << 1);
@@ -25,10 +23,7 @@ unsigned char CALC_FLAGS(unsigned char Gr, unsigned char Sz, unsigned char L) {
   return Flags;
 };
 
-unsigned long long CalcGDTEntry(unsigned long long base,
-                                unsigned long long limit,
-                                unsigned long long AccessByte,
-                                unsigned long long Flags) {
+unsigned long long CalcGDTEntry(unsigned long long base, unsigned long long limit, unsigned long long AccessByte, unsigned long long Flags) {
   unsigned long long gdtEntry = 0;
   gdtEntry |= limit & 0xffff;
   gdtEntry |= (base & 0xffff) << 16;
@@ -47,8 +42,7 @@ unsigned long long gdtr[2];
 void gdtInit() {
   // setup gdt
   gdt[0] = CalcGDTEntry(0, 0, 0, 0);
-  gdt[1] = CalcGDTEntry(0, 0xfffff, CALC_ACCESS_BYTE(1, 0, 1, 1, 0, 1, 1),
-                        CALC_FLAGS(1, 0, 1));
+  gdt[1] = CalcGDTEntry(0, 0xfffff, CALC_ACCESS_BYTE(1, 0, 1, 1, 0, 1, 1), CALC_FLAGS(1, 0, 1));
   // TODO in 64bit mode, data segment is not needed?
   // gdt[2] = CalcGDTEntry(0, 0xfffff, CALC_ACCESS_BYTE(1, 0, 1, 0, 0, 1, 1),
   // CALC_FLAGS(1, 1, 0));
@@ -88,16 +82,10 @@ unsigned long long GetCR3(void) {
 
 unsigned char InByte(unsigned short addr) {
   unsigned char data;
-  asm volatile("in %[addr], %[data]"
-               : [ data ] "=a"(data)
-               : [ addr ] "d"(addr));
+  asm volatile("in %[addr], %[data]" : [ data ] "=a"(data) : [ addr ] "d"(addr));
   return data;
 }
 
-void OutByte(unsigned short addr, unsigned char data) {
-  asm volatile("out %[data], %[addr]"
-               :
-               : [ addr ] "d"(addr), [ data ] "a"(data));
-}
+void OutByte(unsigned short addr, unsigned char data) { asm volatile("out %[data], %[addr]" : : [ addr ] "d"(addr), [ data ] "a"(data)); }
 
 void CpuHalt(void) { asm volatile("hlt"); }

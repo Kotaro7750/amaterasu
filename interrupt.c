@@ -8,8 +8,7 @@ unsigned long long idtr[2];
 void DefaultHandler(void);
 void DoubleFaultHandlerASM(void);
 
-void SetInterruptDescriptor(unsigned char interruptNumber, void *handler,
-                            unsigned int present) {
+void SetInterruptDescriptor(unsigned char interruptNumber, void *handler, unsigned int present) {
   idt[interruptNumber].Offset0_15 = (unsigned long long)handler;
   // TODO this magic number should be MACRO.
   // kernel code segment
@@ -35,8 +34,7 @@ void idtInit() {
     SetInterruptDescriptor(i, handler, 0);
   }
 
-  asm volatile("lea DoubleFaultHandlerASM, %[handler]"
-               : [ handler ] "=r"(handler));
+  asm volatile("lea DoubleFaultHandlerASM, %[handler]" : [ handler ] "=r"(handler));
   SetInterruptDescriptor(DOUBLE_FAULT_EXCP_NUM, handler, 1);
 
   // load idt to idtr

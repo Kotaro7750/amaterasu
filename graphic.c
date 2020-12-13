@@ -49,7 +49,7 @@ void puts(unsigned char *str) {
 void puth(unsigned long long num) {
   int i = 0;
   unsigned char str[UNUM64_STR_LEN + 1];
-  for (i = 0; i<UNUM64_STR_LEN; i++) {
+  for (i = 0; i < UNUM64_STR_LEN; i++) {
     str[i] = '0';
   }
   str[UNUM64_STR_LEN] = '\0';

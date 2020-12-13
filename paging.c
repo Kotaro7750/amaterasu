@@ -7,8 +7,7 @@ void PageFaultHandlerASM(void);
 
 void PagingInit(void) {
   void *handler;
-  asm volatile("lea PageFaultHandlerASM, %[handler]"
-               : [ handler ] "=r"(handler));
+  asm volatile("lea PageFaultHandlerASM, %[handler]" : [ handler ] "=r"(handler));
   SetInterruptDescriptor(PAGE_FAULT_EXCP_NUM, handler, 1);
 }
 
@@ -49,8 +48,7 @@ unsigned long long CalcPhyAddr(unsigned long long LinearAddr) {
     return 0;
   }
 
-  struct L3PTEntry *l3ptBase =
-      (struct L3PTEntry *)(l4ptEntry.L3PTPhysAddr << 12);
+  struct L3PTEntry *l3ptBase = (struct L3PTEntry *)(l4ptEntry.L3PTPhysAddr << 12);
   struct L3PTEntry l3ptEntry = l3ptBase[l3ptIndex];
   if (l3ptEntry.Present != 1) {
     return 0;
@@ -58,8 +56,7 @@ unsigned long long CalcPhyAddr(unsigned long long LinearAddr) {
 
   // 1GB Page
   if (l3ptEntry.PageSize == 1) {
-    struct L3PTEntry1GB *l3ptBase1GB =
-        (struct L3PTEntry1GB *)(l4ptEntry.L3PTPhysAddr << 12);
+    struct L3PTEntry1GB *l3ptBase1GB = (struct L3PTEntry1GB *)(l4ptEntry.L3PTPhysAddr << 12);
     struct L3PTEntry1GB l3ptEntry1GB = l3ptBase1GB[l3ptIndex];
 
     // Present flag is already checked
@@ -69,8 +66,7 @@ unsigned long long CalcPhyAddr(unsigned long long LinearAddr) {
 
   } else {
     // 2MB or 4KB Page
-    struct L2PTEntry *l2ptBase =
-        (struct L2PTEntry *)(l3ptEntry.L2PTPhysAddr << 12);
+    struct L2PTEntry *l2ptBase = (struct L2PTEntry *)(l3ptEntry.L2PTPhysAddr << 12);
     struct L2PTEntry l2ptEntry = l2ptBase[l2ptIndex];
     if (l2ptEntry.Present != 1) {
       return 0;
@@ -78,20 +74,17 @@ unsigned long long CalcPhyAddr(unsigned long long LinearAddr) {
 
     // 2MB Page
     if (l2ptEntry.PageSize == 1) {
-      struct L2PTEntry2MB *l2ptBase2MB =
-          (struct L2PTEntry2MB *)(l3ptEntry.L2PTPhysAddr << 12);
+      struct L2PTEntry2MB *l2ptBase2MB = (struct L2PTEntry2MB *)(l3ptEntry.L2PTPhysAddr << 12);
       struct L2PTEntry2MB l2ptEntry2MB = l2ptBase2MB[l2ptIndex];
 
       // Present flag is already checked
       unsigned int inPageOffset = LinearAddr & 0xfffff;
-      unsigned long long physicalPageAddr = l2ptEntry2MB.PageFramePhysAddr
-                                            << 21;
+      unsigned long long physicalPageAddr = l2ptEntry2MB.PageFramePhysAddr << 21;
       physicalAddr = physicalPageAddr + inPageOffset;
 
     } else {
       // 4KB Page
-      struct L1PTEntry *l1ptBase =
-          (struct L1PTEntry *)(l2ptEntry.L1PTPhysAddr << 12);
+      struct L1PTEntry *l1ptBase = (struct L1PTEntry *)(l2ptEntry.L1PTPhysAddr << 12);
       struct L1PTEntry l1ptEntry = l1ptBase[l1ptIndex];
 
       if (l1ptEntry.Present != 1) {

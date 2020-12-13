@@ -2,10 +2,9 @@
 #define _PAGING_H_
 
 struct L4PTEntry {
-  unsigned long long Present : 1;   // if 0, entry is disabled
-  unsigned long long ReadWrite : 1; // if 0, cannot write to 512GB region
-  unsigned long long
-      UserSupervisor : 1; // if 0, cannot access by user mode to 512GB region
+  unsigned long long Present : 1;        // if 0, entry is disabled
+  unsigned long long ReadWrite : 1;      // if 0, cannot write to 512GB region
+  unsigned long long UserSupervisor : 1; // if 0, cannot access by user mode to 512GB region
   unsigned long long PageWriteThrough : 1;
   unsigned long long PageCacheDisable : 1;
   unsigned long long Accessed : 1;
@@ -18,10 +17,9 @@ struct L4PTEntry {
 };
 
 struct L3PTEntry {
-  unsigned long long Present : 1;   // if 0, entry is disabled
-  unsigned long long ReadWrite : 1; // if 0, cannot write to 1GB region
-  unsigned long long
-      UserSupervisor : 1; // if 0, cannot access by user mode to 1GB region
+  unsigned long long Present : 1;        // if 0, entry is disabled
+  unsigned long long ReadWrite : 1;      // if 0, cannot write to 1GB region
+  unsigned long long UserSupervisor : 1; // if 0, cannot access by user mode to 1GB region
   unsigned long long PageWriteThrough : 1;
   unsigned long long PageCacheDisable : 1;
   unsigned long long Accessed : 1;
@@ -34,10 +32,9 @@ struct L3PTEntry {
 };
 
 struct L3PTEntry1GB {
-  unsigned long long Present : 1;   // if 0, entry is disabled
-  unsigned long long ReadWrite : 1; // if 0, cannot write to 1GB region
-  unsigned long long
-      UserSupervisor : 1; // if 0, cannot access by user mode to 1GB region
+  unsigned long long Present : 1;        // if 0, entry is disabled
+  unsigned long long ReadWrite : 1;      // if 0, cannot write to 1GB region
+  unsigned long long UserSupervisor : 1; // if 0, cannot access by user mode to 1GB region
   unsigned long long PageWriteThrough : 1;
   unsigned long long PageCacheDisable : 1;
   unsigned long long Accessed : 1;
@@ -54,10 +51,9 @@ struct L3PTEntry1GB {
 };
 
 struct L2PTEntry {
-  unsigned long long Present : 1;   // if 0, entry is disabled
-  unsigned long long ReadWrite : 1; // if 0, cannot write to 2MB region
-  unsigned long long
-      UserSupervisor : 1; // if 0, cannot access by user mode to 2MB region
+  unsigned long long Present : 1;        // if 0, entry is disabled
+  unsigned long long ReadWrite : 1;      // if 0, cannot write to 2MB region
+  unsigned long long UserSupervisor : 1; // if 0, cannot access by user mode to 2MB region
   unsigned long long PageWriteThrough : 1;
   unsigned long long PageCacheDisable : 1;
   unsigned long long Accessed : 1;
@@ -70,10 +66,9 @@ struct L2PTEntry {
 };
 
 struct L2PTEntry2MB {
-  unsigned long long Present : 1;   // if 0, entry is disabled
-  unsigned long long ReadWrite : 1; // if 0, cannot write to 2MB region
-  unsigned long long
-      UserSupervisor : 1; // if 0, cannot access by user mode to 2MB region
+  unsigned long long Present : 1;        // if 0, entry is disabled
+  unsigned long long ReadWrite : 1;      // if 0, cannot write to 2MB region
+  unsigned long long UserSupervisor : 1; // if 0, cannot access by user mode to 2MB region
   unsigned long long PageWriteThrough : 1;
   unsigned long long PageCacheDisable : 1;
   unsigned long long Accessed : 1;
@@ -90,10 +85,9 @@ struct L2PTEntry2MB {
 };
 
 struct L1PTEntry {
-  unsigned long long Present : 1;   // if 0, entry is disabled
-  unsigned long long ReadWrite : 1; // if 0, cannot write to 4KB region
-  unsigned long long
-      UserSupervisor : 1; // if 0, cannot access by user mode to 4KB region
+  unsigned long long Present : 1;        // if 0, entry is disabled
+  unsigned long long ReadWrite : 1;      // if 0, cannot write to 4KB region
+  unsigned long long UserSupervisor : 1; // if 0, cannot access by user mode to 4KB region
   unsigned long long PageWriteThrough : 1;
   unsigned long long PageCacheDisable : 1;
   unsigned long long Accessed : 1;

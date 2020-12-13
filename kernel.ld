@@ -3,7 +3,7 @@ OUTPUT_FORMAT("binary");
 MEMORY
 {
         exec_file(r) : ORIGIN = 0x00000000, LENGTH = 1m
-        ram(wx)      : ORIGIN = 0x00110000, LENGTH = 960k
+        ram(wx)      : ORIGIN = 0x00100000, LENGTH = 960k
 }
 
 SECTIONS

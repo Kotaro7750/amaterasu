@@ -20,7 +20,6 @@ struct InterruptDescriptor {
   unsigned int _zeroReserved;
 };
 
-void SetInterruptDescriptor(unsigned char interruptNumber, void *handler,
-                            unsigned int present);
+void SetInterruptDescriptor(unsigned char interruptNumber, void *handler, unsigned int present);
 void idtInit();
 #endif

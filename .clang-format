@@ -1,0 +1,6 @@
+BasedOnStyle: 'LLVM'
+IndentWidth: 2
+ColumnLimit: 150
+BinPackArguments: false
+BinPackParameters: false
+AlignTrailingComments: true

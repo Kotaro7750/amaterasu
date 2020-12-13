@@ -1,7 +1,7 @@
 #include "include/pic.h"
 #include "include/x86_64.h"
 
-void picInit(void){
+void picInit(void) {
   // ICW1, use ICW4, enable cascade, edge trigger
   OutByte(PIC_MASTER_COMMAND_STATUS, 0x11);
   OutByte(PIC_SLAVE_COMMAND_STATUS, 0x11);
@@ -23,7 +23,7 @@ void picInit(void){
   OutByte(PIC_SLAVE_DATA, 0xff);
 }
 
-void EnableInterruptOnPIC(unsigned char interruptNum){
+void EnableInterruptOnPIC(unsigned char interruptNum) {
   if (PIC_MASTER_INTERRUPT_NUM <= interruptNum && interruptNum < PIC_SLAVE_INTERRUPT_NUM) {
     unsigned char interruptOffset = interruptNum - PIC_MASTER_INTERRUPT_NUM;
     unsigned char interruptBit = 1 << interruptOffset;
@@ -38,7 +38,7 @@ void EnableInterruptOnPIC(unsigned char interruptNum){
 
     OutByte(PIC_MASTER_DATA, IMR - interruptBit);
 
-  }else if (PIC_SLAVE_INTERRUPT_NUM <= interruptNum && interruptNum < PIC_SLAVE_INTERRUPT_NUM + 8) {
+  } else if (PIC_SLAVE_INTERRUPT_NUM <= interruptNum && interruptNum < PIC_SLAVE_INTERRUPT_NUM + 8) {
     unsigned char interruptOffset = interruptNum - PIC_SLAVE_INTERRUPT_NUM;
     unsigned char interruptBit = 1 << interruptOffset;
 
@@ -50,21 +50,21 @@ void EnableInterruptOnPIC(unsigned char interruptNum){
 
     OutByte(PIC_SLAVE_DATA, IMR - interruptBit);
 
-  }else {
+  } else {
     return;
   }
 }
 
-void SendEndOfInterrupt(unsigned char interruptNum){
+void SendEndOfInterrupt(unsigned char interruptNum) {
   if (PIC_MASTER_INTERRUPT_NUM <= interruptNum && interruptNum < PIC_SLAVE_INTERRUPT_NUM) {
     unsigned char irq = interruptNum - PIC_MASTER_INTERRUPT_NUM;
 
     OutByte(PIC_MASTER_COMMAND_STATUS, PIC_EOI | irq);
-  }else if (PIC_SLAVE_INTERRUPT_NUM <= interruptNum && interruptNum < PIC_SLAVE_INTERRUPT_NUM + 8) {
+  } else if (PIC_SLAVE_INTERRUPT_NUM <= interruptNum && interruptNum < PIC_SLAVE_INTERRUPT_NUM + 8) {
     unsigned char irq = interruptNum - PIC_SLAVE_INTERRUPT_NUM;
 
     OutByte(PIC_MASTER_COMMAND_STATUS, PIC_EOI | 0x2);
     OutByte(PIC_SLAVE_COMMAND_STATUS, PIC_EOI | irq);
-  }else {
+  } else {
   }
 }
