@@ -1,29 +1,34 @@
-OUTPUT_FORMAT("binary");
+OUTPUT_FORMAT(elf64-x86-64)
+ENTRY(start_kernel)
 
 MEMORY
 {
-        exec_file(r) : ORIGIN = 0x00000000, LENGTH = 1m
-        ram(wx)      : ORIGIN = 0x00100000, LENGTH = 960k
+  ram(rwx) : ORIGIN = 0x100000, LENGTH = 1m
 }
 
 SECTIONS
 {
-        .header : {
-                QUAD(__bss_start)
-                QUAD(__bss_end - __bss_start)
-        } > exec_file
-
-        .body : {
+        .text : {
                 *(.text)
+        }>ram AT>ram
 
+        .rodata : {
                 *(.rodata)
+        }>ram AT>ram
 
+        .data : {
                 *(.data)
+        }>ram AT>ram
 
-                __bss_start = .;
+        .bss : {
                 *(.bss)
-                __bss_end = .;
+        }>ram AT>ram
 
+        .eh_frame : {
                 *(.eh_frame)
-        } > ram AT> exec_file
+        }>ram AT>ram
+
+        .debug_info : {
+                *(.debug_info)
+        }
 }

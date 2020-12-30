@@ -1,5 +1,7 @@
+#include "include/acpi.h"
 #include "include/fb.h"
 #include "include/graphic.h"
+#include "include/hpet.h"
 #include "include/interrupt.h"
 #include "include/kbc.h"
 #include "include/paging.h"
@@ -7,9 +9,15 @@
 #include "include/pic.h"
 #include "include/x86_64.h"
 
-void start_kernel(void *_t __attribute__((unused)), struct FrameBuffer *_fb, struct PhysicalMemoryFreeMapInfo *freeMapInfo) {
+struct __attribute__((packed)) PlatformInfo {
+  struct FrameBuffer fb;
+  void *RSDPAddress;
+};
 
-  FBInit(_fb);
+void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, struct PhysicalMemoryFreeMapInfo *freeMapInfo) {
+
+  FBInit(&(_pi->fb));
+  ACPIInit(_pi->RSDPAddress);
   gdtInit();
   GraphicInit();
 
@@ -31,6 +39,9 @@ void start_kernel(void *_t __attribute__((unused)), struct FrameBuffer *_fb, str
 
   ((struct L4PTEntry *)addr)[0] = pt4[0];
   asm volatile("mov %[value], %%cr3" ::[value] "r"(addr));
+
+  struct SDTH *hpetTable = FindSDT("HPET");
+  DumpGCIDR();
 
   while (1)
     CpuHalt();
