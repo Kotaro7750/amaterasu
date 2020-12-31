@@ -7,6 +7,7 @@ unsigned long long idtr[2];
 
 void DefaultHandler(void);
 void DoubleFaultHandlerASM(void);
+void GeneralProtectionFaultHandlerASM(void);
 
 void SetInterruptDescriptor(unsigned char interruptNumber, void *handler, unsigned int present) {
   idt[interruptNumber].Offset0_15 = (unsigned long long)handler;
@@ -37,6 +38,9 @@ void idtInit() {
   asm volatile("lea DoubleFaultHandlerASM, %[handler]" : [ handler ] "=r"(handler));
   SetInterruptDescriptor(DOUBLE_FAULT_EXCP_NUM, handler, 1);
 
+  asm volatile("lea GeneralProtectionFaultHandlerASM, %[handler]" : [ handler ] "=r"(handler));
+  SetInterruptDescriptor(GENERAL_PROTECTION_FAULT_EXCP_NUM, handler, 1);
+
   // load idt to idtr
   idtr[0] = ((unsigned long long)idt << 16) | ((sizeof(idt) - 1) & 0xffff);
   idtr[1] = (unsigned long long)idt >> 48;
@@ -45,6 +49,29 @@ void idtInit() {
 
 void DoubleFaultHandler(void) {
   puts("DOUBLE FAULT\n");
+  while (1) {
+    CpuHalt();
+  }
+}
+
+void GeneralProtectionFaultHandler(void){
+  unsigned long long errorCode;
+  unsigned long long rbp;
+  asm volatile("mov %%rbp, %[Rbp]" : [ Rbp ] "=r"(rbp));
+  errorCode = *(unsigned long long*)(rbp + 16);
+
+  char external = errorCode & 0x1;
+  char tbl = (errorCode >> 1) & 0x3;
+  short index = (errorCode >> 3) & 0x1fff;
+
+  puts("GENERAL PROTECTION FAULT\n");
+  puts("EXTERNAL: ");
+  puth(external);
+  puts("\r\nTBL: ");
+  puth(tbl);
+  puts("\r\nINDEX: ");
+  puth(index);
+
   while (1) {
     CpuHalt();
   }

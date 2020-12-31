@@ -4,6 +4,7 @@
 #define MAX_INTR_NUM 256
 
 #define DOUBLE_FAULT_EXCP_NUM 8
+#define GENERAL_PROTECTION_FAULT_EXCP_NUM 13
 #define PAGE_FAULT_EXCP_NUM 14
 
 struct InterruptDescriptor {
