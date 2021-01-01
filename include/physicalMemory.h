@@ -1,6 +1,8 @@
 #ifndef _PHYSICALMEMORY_H_
 #define _PHYSICALMEMORY_H_
 
+#define PAGE_SIZE 4096
+
 struct PhysicalMemoryFreeMapInfo {
   unsigned long long Base;
   unsigned long long Size;

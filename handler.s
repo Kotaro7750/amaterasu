@@ -69,3 +69,22 @@ HPETHandlerASM:
   pop     %rcx
   pop     %rax
   iretq
+
+  .global SyscallHandlerASM
+SyscallHandlerASM:
+  push    %rcx
+  push    %rax
+  push    %rdx
+  push    %rbx
+  push    %rbp
+  push    %rsi
+  push    %rdi
+  call    SyscallHandler
+  pop     %rdi
+  pop     %rsi
+  pop     %rbp
+  pop     %rbx
+  pop     %rdx
+  pop     %rcx
+  pop     %rcx
+  iretq
