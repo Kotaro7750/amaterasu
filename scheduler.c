@@ -2,8 +2,10 @@
 #include "include/graphic.h"
 #include "include/hpet.h"
 #include "include/interrupt.h"
+#include "include/physicalMemory.h"
 #include "include/pic.h"
 #include "include/syscall.h"
+#include "include/x86_64.h"
 
 struct TaskListEntry taskList[TASK_MAX_NUMBER];
 int currentTaskId = KERNEL_TASK_ID;
@@ -18,14 +20,15 @@ void SchedulerInit() {
   // kernel task
   taskList[KERNEL_TASK_ID].isValid = 1;
   taskList[KERNEL_TASK_ID].isStarted = 1;
-
-  HPETStartPeriodicTimer(SCHEDULER_PERIOD);
 }
 
-int NewProcessId(){
-  int newProcessId = 0;
+void SchedulerStart() { HPETStartPeriodicTimer(SCHEDULER_PERIOD); }
+
+// TODO infinite loop when no process id is available
+int NewProcessId() {
+  int newProcessId = KERNEL_TASK_ID;
   while (taskList[newProcessId].isValid) {
-    newProcessId = (newProcessId+1) % MAX_INTR_NUM;
+    newProcessId = (newProcessId + 1) % TASK_MAX_NUMBER;
   }
 
   return newProcessId;
@@ -33,7 +36,22 @@ int NewProcessId(){
 
 // 割り込みが起こった時点でのrsp
 void Schedule(unsigned long long currentRsp) {
-  taskList[currentTaskId].rsp = currentRsp;
+  unsigned long long previousTaskRsp = *((unsigned long long *)(currentRsp + 8 * 10));
+  // taskList[currentTaskId].rsp = currentRsp;
+  if (currentTaskId == KERNEL_TASK_ID) {
+    taskList[currentTaskId].rsp = currentRsp;
+    // tss[1] = AllocateSinglePageFrame() + 4096 - 1;
+    // tss[1] = currentRsp;
+  } else {
+    taskList[currentTaskId].rsp = previousTaskRsp;
+  }
+  puts("\n");
+  puth(currentTaskId);
+  puts(",");
+  puth(currentRsp);
+  puts(",");
+  puth(previousTaskRsp);
+  puts(",");
 
   // search next task
   while (1) {
@@ -42,6 +60,8 @@ void Schedule(unsigned long long currentRsp) {
       break;
     }
   }
+  puth(currentTaskId);
+  puts("\n");
 
   SendEndOfInterrupt(HPET_INTERRUPT_NUM);
 

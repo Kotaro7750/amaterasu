@@ -1,4 +1,5 @@
 #include "include/x86_64.h"
+#include "include/physicalMemory.h"
 
 unsigned char
 CALC_ACCESS_BYTE(unsigned char Pr, unsigned char Priv, unsigned char S, unsigned char Ex, unsigned char DC, unsigned char RW, unsigned char Ac) {
@@ -36,16 +37,30 @@ unsigned long long CalcGDTEntry(unsigned long long base, unsigned long long limi
   return gdtEntry;
 }
 
-unsigned long long gdt[2];
+unsigned long long CalcTSSDescriptorHigher(unsigned long long base) {
+  unsigned long long higher = 0;
+  higher += (base >> 32) & 0xffffffff;
+  return higher;
+}
+
+unsigned long long gdt[7];
 unsigned long long gdtr[2];
+unsigned int tss[26];
 
 void gdtInit() {
   // setup gdt
-  gdt[0] = CalcGDTEntry(0, 0, 0, 0);
-  gdt[1] = CalcGDTEntry(0, 0xfffff, CALC_ACCESS_BYTE(1, 0, 1, 1, 0, 1, 1), CALC_FLAGS(1, 0, 1));
-  // TODO in 64bit mode, data segment is not needed?
-  // gdt[2] = CalcGDTEntry(0, 0xfffff, CALC_ACCESS_BYTE(1, 0, 1, 0, 0, 1, 1),
-  // CALC_FLAGS(1, 1, 0));
+  gdt[0] = GDT_NULL;
+  gdt[1] = GDT_KERNEL_CODE;
+  gdt[2] = GDT_KERNEL_DATA;
+  gdt[3] = GDT_USER_CODE;
+  gdt[4] = GDT_USER_DATA;
+  for (int i = 0; i < 26; i++) {
+    tss[i] = 0;
+  }
+  // tss[1] = AllocateSinglePageFrame() + 4096 - 1;
+  tss[1] = 0x1fff60;
+  gdt[5] = GDT_TSS_DESCRIPTOR_LOWER((unsigned long long)(&(tss[0])));
+  gdt[6] = GDT_TSS_DESCRIPTOR_HIGHER((unsigned long long)(&(tss[0])));
 
   // load gdt to gdtr
   gdtr[0] = ((unsigned long long)gdt << 16) | ((sizeof(gdt) - 1) & 0xffff);
@@ -70,6 +85,9 @@ void gdtInit() {
                "dummyLabel:"
                : [ dummy ] "=r"(dummy)
                : [ selector ] "m"(segmentSelector));
+
+  unsigned short tssSelector = 40;
+  asm volatile("ltr %[tssSelector]" ::[tssSelector] "m"(tssSelector));
 }
 
 void EnableCPUInterrupt(void) { asm volatile("sti"); }

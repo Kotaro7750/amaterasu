@@ -17,6 +17,7 @@ extern struct TaskListEntry taskList[TASK_MAX_NUMBER];
 extern int currentTaskId;
 
 void SchedulerInit();
+void SchedulerStart();
 int NewProcessId();
 void Schedule(unsigned long long currentRsp);
 

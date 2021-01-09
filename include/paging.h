@@ -1,6 +1,11 @@
 #ifndef _PAGING_H_
 #define _PAGING_H_
 
+#define L4_PT_INDEX(address) ((address >> 39) & 0x1ff)
+#define L3_PT_INDEX(address) ((address >> 30) & 0x1ff)
+#define L2_PT_INDEX(address) ((address >> 21) & 0x1ff)
+#define L1_PT_INDEX(address) ((address >> 12) & 0x1ff)
+
 struct L4PTEntry {
   unsigned long long Present : 1;        // if 0, entry is disabled
   unsigned long long ReadWrite : 1;      // if 0, cannot write to 512GB region
@@ -104,6 +109,7 @@ struct L1PTEntry {
 void PagingInit(void);
 void CausePageFoult(void);
 unsigned long long CalcPhyAddr(unsigned long long LinearAddr);
-void _dumpPTEntry(struct L2PTEntry l1ptEntry);
+void _dumpPTEntry(struct L2PTEntry2MB l1ptEntry);
+void _dumpPageTableInfo();
 
 #endif

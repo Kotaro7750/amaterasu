@@ -1,5 +1,6 @@
 #include "include/process.h"
 #include "include/graphic.h"
+#include "include/paging.h"
 #include "include/physicalMemory.h"
 #include "include/scheduler.h"
 
@@ -7,11 +8,15 @@ void execHandler(unsigned long long entryPoint) {
   unsigned long long *sp = (unsigned long long *)(AllocateSinglePageFrame() + PAGE_SIZE - 1);
   unsigned long long old_sp = (unsigned long long)sp;
 
+  // enable user mode
+  // puth((unsigned long long)sp);
+
   int newTaskId = NewProcessId();
 
   /* push SS */
   --sp;
-  *sp = 0x0;
+  //*sp = 0x0;
+  *sp = 35;
 
   /* push old RSP */
   --sp;
@@ -23,7 +28,8 @@ void execHandler(unsigned long long entryPoint) {
 
   /* push CS */
   --sp;
-  *sp = 8;
+  //*sp = 8;
+  *sp = 27;
 
   /* push RIP */
   --sp;
