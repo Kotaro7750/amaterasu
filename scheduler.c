@@ -36,22 +36,41 @@ int NewProcessId() {
 
 // 割り込みが起こった時点でのrsp
 void Schedule(unsigned long long currentRsp) {
-  unsigned long long previousTaskRsp = *((unsigned long long *)(currentRsp + 8 * 10));
-  // taskList[currentTaskId].rsp = currentRsp;
   if (currentTaskId == KERNEL_TASK_ID) {
     taskList[currentTaskId].rsp = currentRsp;
-    // tss[1] = AllocateSinglePageFrame() + 4096 - 1;
-    // tss[1] = currentRsp;
   } else {
-    taskList[currentTaskId].rsp = previousTaskRsp;
+    // 割り込みを起こしたタスクのrsp
+    unsigned long long previousTaskRsp = *((unsigned long long *)(currentRsp + 8 * 10));
+    unsigned long long *sp = (unsigned long long *)previousTaskRsp;
+
+    // ss
+    sp--;
+    *sp = *((unsigned long long *)(currentRsp + 8 * 11));
+
+    // rsp
+    sp--;
+    *sp = *((unsigned long long *)(currentRsp + 8 * 10));
+
+    // rflags
+    sp--;
+    *sp = *((unsigned long long *)(currentRsp + 8 * 9));
+
+    // cs
+    sp--;
+    *sp = *((unsigned long long *)(currentRsp + 8 * 8));
+
+    // rip
+    sp--;
+    *sp = *((unsigned long long *)(currentRsp + 8 * 7));
+
+    // general register
+    for (int i = 6; i >= 0; i--) {
+      sp--;
+      *sp = *((unsigned long long *)(currentRsp + 8 * i));
+    }
+
+    taskList[currentTaskId].rsp = (unsigned long long)sp;
   }
-  puts("\n");
-  puth(currentTaskId);
-  puts(",");
-  puth(currentRsp);
-  puts(",");
-  puth(previousTaskRsp);
-  puts(",");
 
   // search next task
   while (1) {
@@ -60,8 +79,6 @@ void Schedule(unsigned long long currentRsp) {
       break;
     }
   }
-  puth(currentTaskId);
-  puts("\n");
 
   SendEndOfInterrupt(HPET_INTERRUPT_NUM);
 

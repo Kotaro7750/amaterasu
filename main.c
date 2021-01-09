@@ -22,7 +22,6 @@ void taskA() {
     volatile unsigned long long wait = 10000000;
     while (wait--)
       ;
-    // puth(GetCR3());
   }
 }
 
@@ -64,8 +63,8 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   EnableCPUInterrupt();
 
   Syscall(SYSCALL_EXEC, (unsigned long long)taskA, 0, 0);
-  // Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
-  // Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
+  Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
+  Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
 
   // Schedule(0);
   SchedulerStart();
