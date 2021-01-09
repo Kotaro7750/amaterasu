@@ -57,8 +57,7 @@ void gdtInit() {
   for (int i = 0; i < 26; i++) {
     tss[i] = 0;
   }
-  // tss[1] = AllocateSinglePageFrame() + 4096 - 1;
-  tss[1] = 0x1fff60;
+  tss[1] = AllocateSinglePageFrame() + PAGE_SIZE - 1;
   gdt[5] = GDT_TSS_DESCRIPTOR_LOWER((unsigned long long)(&(tss[0])));
   gdt[6] = GDT_TSS_DESCRIPTOR_HIGHER((unsigned long long)(&(tss[0])));
 

@@ -10,6 +10,7 @@ struct TaskListEntry {
   unsigned long long isValid : 1;
   unsigned long long isStarted : 1;
   unsigned long long Reserved : 62;
+  unsigned long long cr3;
   unsigned long long rsp;
 };
 

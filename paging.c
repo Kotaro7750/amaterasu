@@ -16,7 +16,7 @@ void PagingInit(void) {
     if (i < 5) {
       l3ptBase[i].Present = 1;
       l3ptBase[i].ReadWrite = 1;
-      l3ptBase[i].UserSupervisor = 1;
+      l3ptBase[i].UserSupervisor = 0;
       l3ptBase[i].PageWriteThrough = 0;
       l3ptBase[i].PageCacheDisable = 0;
       l3ptBase[i].Accessed = 0;
@@ -39,7 +39,7 @@ void PagingInit(void) {
     if (i == 0) {
       l4ptBase[i].Present = 1;
       l4ptBase[i].ReadWrite = 1;
-      l4ptBase[i].UserSupervisor = 1;
+      l4ptBase[i].UserSupervisor = 0;
       l4ptBase[i].PageWriteThrough = 0;
       l4ptBase[i].PageCacheDisable = 0;
       l4ptBase[i].Accessed = 0;

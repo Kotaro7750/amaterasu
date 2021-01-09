@@ -34,12 +34,14 @@ int NewProcessId() {
   return newProcessId;
 }
 
-// 割り込みが起こった時点でのrsp
+// rsp of current stack
+// note that current stack is always kernel stack
 void Schedule(unsigned long long currentRsp) {
   if (currentTaskId == KERNEL_TASK_ID) {
     taskList[currentTaskId].rsp = currentRsp;
+    taskList[currentTaskId].cr3 = GetCR3();
   } else {
-    // 割り込みを起こしたタスクのrsp
+    // rsp of process which occurred interrupt
     unsigned long long previousTaskRsp = *((unsigned long long *)(currentRsp + 8 * 10));
     unsigned long long *sp = (unsigned long long *)previousTaskRsp;
 
@@ -80,6 +82,7 @@ void Schedule(unsigned long long currentRsp) {
     }
   }
 
+  asm volatile("mov %[value], %%cr3" ::[value] "r"(taskList[currentTaskId].cr3));
   SendEndOfInterrupt(HPET_INTERRUPT_NUM);
 
   asm volatile("mov %[Rsp], %%rsp" ::[Rsp] "a"(taskList[currentTaskId].rsp));
