@@ -1,4 +1,5 @@
 #include "include/acpi.h"
+#include "include/ata.h"
 #include "include/fb.h"
 #include "include/graphic.h"
 #include "include/hpet.h"
@@ -44,7 +45,6 @@ void taskC() {
 }
 
 void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, struct PhysicalMemoryFreeMapInfo *freeMapInfo) {
-
   FBInit(&(_pi->fb));
   gdtInit();
   GraphicInit();
@@ -56,18 +56,28 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   HPETInit();
   SyscallInit();
   SchedulerInit();
+  ATAInit();
 
   PhysicalMemoryManagementInit(*freeMapInfo);
   PagingInit();
 
   EnableCPUInterrupt();
 
-  Syscall(SYSCALL_EXEC, (unsigned long long)taskA, 0, 0);
-  Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
-  Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
+  // Syscall(SYSCALL_EXEC, (unsigned long long)taskA, 0, 0);
+  // Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
+  // Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
 
   // Schedule(0);
-  SchedulerStart();
+  // SchedulerStart();
+
+  unsigned char buffer[512];
+  ATARead(0, buffer);
+  //struct MasterBootRecord mbr = *(struct MasterBootRecord *)(buffer);
+  //struct MBRPartitionTableEntry pt = mbr.FirstPartitionTable;
+
+  //unsigned int lbaStart = pt.PartitionStartLBA;
+
+  //ATARead(lbaStart, buffer);
 
   while (1)
     CpuHalt();

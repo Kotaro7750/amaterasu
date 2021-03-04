@@ -27,6 +27,7 @@ void gdtInit();
 void EnableCPUInterrupt(void);
 unsigned long long GetCR3(void);
 unsigned char InByte(unsigned short addr);
+unsigned short InShort(unsigned short addr);
 void OutByte(unsigned short addr, unsigned char data);
 void CpuHalt(void);
 #endif

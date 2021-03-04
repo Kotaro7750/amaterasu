@@ -6,7 +6,7 @@ CFLAGS = -Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-common -g
 LDFLAGS = -Map kernel.map -s -x -T kernel.ld --nmagic
 LDFLAGS_DEBUG = -Map kernel.map -x -T kernel.ld --nmagic
 
-SRC = main.c fb.c graphic.c font.c x86_64.c kbc.c interrupt.c pic.c handler.c paging.c physicalMemory.c acpi.c util.c hpet.c scheduler.c syscall.c process.c
+SRC = main.c fb.c graphic.c font.c x86_64.c kbc.c interrupt.c pic.c handler.c paging.c physicalMemory.c acpi.c util.c hpet.c scheduler.c syscall.c process.c ata.c
 OBJ = $(SRC:%.c=%.o)
 
 $(TARGET):$(OBJ)

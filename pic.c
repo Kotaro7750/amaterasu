@@ -24,35 +24,38 @@ void picInit(void) {
 }
 
 void EnableInterruptOnPIC(unsigned char interruptNum) {
+  unsigned char interruptOffset;
+
   if (PIC_MASTER_INTERRUPT_NUM <= interruptNum && interruptNum < PIC_SLAVE_INTERRUPT_NUM) {
-    unsigned char interruptOffset = interruptNum - PIC_MASTER_INTERRUPT_NUM;
-    unsigned char interruptBit = 1 << interruptOffset;
-
-    // read current IMR
-    unsigned char IMR = InByte(PIC_MASTER_DATA);
-
-    // when already enabled
-    if (!(IMR & interruptBit)) {
-      return;
-    }
-
-    OutByte(PIC_MASTER_DATA, IMR - interruptBit);
+    interruptOffset = interruptNum - PIC_MASTER_INTERRUPT_NUM;
 
   } else if (PIC_SLAVE_INTERRUPT_NUM <= interruptNum && interruptNum < PIC_SLAVE_INTERRUPT_NUM + 8) {
-    unsigned char interruptOffset = interruptNum - PIC_SLAVE_INTERRUPT_NUM;
+    interruptOffset = interruptNum - PIC_SLAVE_INTERRUPT_NUM;
     unsigned char interruptBit = 1 << interruptOffset;
 
     unsigned char IMR = InByte(PIC_SLAVE_DATA);
 
-    if (!(IMR & interruptBit)) {
-      return;
+    if (IMR & interruptBit) {
+      OutByte(PIC_SLAVE_DATA, IMR - interruptBit);
     }
 
-    OutByte(PIC_SLAVE_DATA, IMR - interruptBit);
+    // for master
+    interruptOffset = 2;
 
   } else {
     return;
   }
+
+  unsigned char interruptBit = 1 << interruptOffset;
+
+  unsigned char IMR = InByte(PIC_MASTER_DATA);
+
+  // when already enabled
+  if (!(IMR & interruptBit)) {
+    return;
+  }
+
+  OutByte(PIC_MASTER_DATA, IMR - interruptBit);
 }
 
 void SendEndOfInterrupt(unsigned char interruptNum) {

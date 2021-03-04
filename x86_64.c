@@ -103,6 +103,12 @@ unsigned char InByte(unsigned short addr) {
   return data;
 }
 
+unsigned short InShort(unsigned short addr) {
+  unsigned short data;
+  asm volatile("in %[addr], %[data]" : [ data ] "=a"(data) : [ addr ] "d"(addr));
+  return data;
+}
+
 void OutByte(unsigned short addr, unsigned char data) { asm volatile("out %[data], %[addr]" : : [ addr ] "d"(addr), [ data ] "a"(data)); }
 
 void CpuHalt(void) { asm volatile("hlt"); }
