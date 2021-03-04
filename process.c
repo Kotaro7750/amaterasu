@@ -1,9 +1,20 @@
+/**
+ * @file process.c
+ * @brief プロセスの実行関連
+ */
 #include "include/process.h"
 #include "include/graphic.h"
 #include "include/paging.h"
 #include "include/physicalMemory.h"
 #include "include/scheduler.h"
 
+/**
+ * @brief execシステムコールのハンドラ
+ * @param[in] entryPoint タスクのエントリポイント
+ * @details 4KiBの物理ページを一つ割り当てて，タスク実行中にコンテキストスイッチが起こったかのようにスタックに積む
+ * @n タスク用のページテーブル用に物理ページを割り当て，タスク一覧に登録する
+ * @see taskList
+ */
 void execHandler(unsigned long long entryPoint) {
   unsigned long long *sp = (unsigned long long *)(AllocateSinglePageFrame() + PAGE_SIZE - 1);
   unsigned long long old_sp = (unsigned long long)sp;
@@ -91,6 +102,10 @@ void execHandler(unsigned long long entryPoint) {
   taskList[newTaskId].cr3 = (unsigned long long)l4ptBase;
 }
 
+/**
+ * @brief exitシステムコールのハンドラ
+ * @param[in] status 未使用
+ */
 void exitHandler(unsigned long long status) {
   puts("\n");
   puth(currentTaskId);

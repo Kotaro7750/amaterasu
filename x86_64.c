@@ -24,6 +24,13 @@ unsigned char CALC_FLAGS(unsigned char Gr, unsigned char Sz, unsigned char L) {
   return Flags;
 };
 
+/*
+ * @brief GDTのセグメントディスクリプタを計算する
+ * @param[in] base セグメントのベースアドレス
+ * @param[in] limit セグメント終端までのオフセット
+ * @param[in] AccessByte 権限周りのオプション
+ * @param[in] Flags その他のオプション
+ */
 unsigned long long CalcGDTEntry(unsigned long long base, unsigned long long limit, unsigned long long AccessByte, unsigned long long Flags) {
   unsigned long long gdtEntry = 0;
   gdtEntry |= limit & 0xffff;
@@ -43,8 +50,11 @@ unsigned long long CalcTSSDescriptorHigher(unsigned long long base) {
   return higher;
 }
 
+//! GDT
 unsigned long long gdt[7];
+//! GDTR
 unsigned long long gdtr[2];
+//! TSS
 unsigned int tss[26];
 
 void gdtInit() {

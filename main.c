@@ -1,3 +1,8 @@
+/**
+ * @file main.c
+ * @brief カーネルのメイン処理
+ */
+
 #include "include/acpi.h"
 #include "include/fb.h"
 #include "include/graphic.h"
@@ -43,6 +48,12 @@ void taskC() {
   }
 }
 
+/**
+ * @brief カーネルのスタートアップルーチン
+ * @param[in] _t 未使用
+ * @param[in] _pi ブートローダーから渡されるハードウェア関係情報
+ * @param[in] freeMapInfo ブートローダーから渡される物理メモリマップ情報
+ */
 void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, struct PhysicalMemoryFreeMapInfo *freeMapInfo) {
 
   FBInit(&(_pi->fb));

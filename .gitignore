@@ -5,3 +5,5 @@
 !/fs/EFI
 /fs/EFI/BOOT/*
 !/fs/EFI/BOOT/.gitkeep
+
+/doc
