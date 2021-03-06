@@ -16,11 +16,20 @@
 #include "include/syscall.h"
 #include "include/x86_64.h"
 
+/**
+ * @struct PlatformInfo
+ * @brief ブートローダーから渡される情報
+ */
 struct __attribute__((packed)) PlatformInfo {
+  //! フレームバッファの情報
   struct FrameBuffer fb;
+  //! RSDPのアドレス
   void *RSDPAddress;
 };
 
+/**
+ * @brief Aを出力し続ける
+ */
 void taskA() {
   while (1) {
     putc('A');
@@ -30,6 +39,9 @@ void taskA() {
   }
 }
 
+/**
+ * @brief Bを出力し続ける
+ */
 void taskB() {
   while (1) {
     putc('B');
@@ -39,6 +51,9 @@ void taskB() {
   }
 }
 
+/**
+ * @brief Cを出力し続ける
+ */
 void taskC() {
   while (1) {
     putc('C');

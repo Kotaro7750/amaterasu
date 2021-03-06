@@ -1,3 +1,7 @@
+/**
+ * @file x86_64.c
+ * @brief x86_64アーキテクチャ固有の処理
+ */
 #include "include/x86_64.h"
 #include "include/physicalMemory.h"
 
@@ -24,7 +28,7 @@ unsigned char CALC_FLAGS(unsigned char Gr, unsigned char Sz, unsigned char L) {
   return Flags;
 };
 
-/*
+/**
  * @brief GDTのセグメントディスクリプタを計算する
  * @param[in] base セグメントのベースアドレス
  * @param[in] limit セグメント終端までのオフセット
@@ -50,12 +54,24 @@ unsigned long long CalcTSSDescriptorHigher(unsigned long long base) {
   return higher;
 }
 
-//! GDT
+/**
+ * @brief GDTの実体
+ * @details 各セグメントの情報を管理するテーブル
+ * @n x86_64ではセグメントそのものは使われてはいないものの，権限周りの設定はセグメントの仕組みを通じて行う
+ */
 unsigned long long gdt[7];
-//! GDTR
+
+/**
+ * @brief GDTRの実体
+ * @details GDTが格納されているアドレスとサイズを16バイトのGDTRというレジスタで管理している
+ * @n lgdt命令にGDTRの値へのアドレスを渡すことによってそこから読み取ってくれる
+ */
 unsigned long long gdtr[2];
-//! TSS
-unsigned int tss[26];
+
+/**
+ * @brief TSSの実体
+ */
+unsigned int tss[25];
 
 void gdtInit() {
   // setup gdt
@@ -64,10 +80,14 @@ void gdtInit() {
   gdt[2] = GDT_KERNEL_DATA;
   gdt[3] = GDT_USER_CODE;
   gdt[4] = GDT_USER_DATA;
-  for (int i = 0; i < 26; i++) {
+
+  for (int i = 0; i < 25; i++) {
     tss[i] = 0;
   }
-  tss[1] = AllocateSinglePageFrame() + PAGE_SIZE - 1;
+  unsigned long long ring0rsp =AllocateSinglePageFrame() + PAGE_SIZE - 1; 
+  tss[1] = ring0rsp & 0xffffffff;
+  tss[2] = (ring0rsp >> 31) & 0xffffffff;
+
   gdt[5] = GDT_TSS_DESCRIPTOR_LOWER((unsigned long long)(&(tss[0])));
   gdt[6] = GDT_TSS_DESCRIPTOR_HIGHER((unsigned long long)(&(tss[0])));
 
@@ -85,7 +105,7 @@ void gdtInit() {
   // load segment selector to CS using lretq
   // lretq will return to the instruction where dummyLabel indicates.
   // this technique is used to change CS in a safe way.
-  unsigned short segmentSelector = 8;
+  unsigned short segmentSelector = CS_SEGMENT_SELECTOR_KERNEL;
   unsigned long long dummy;
   asm volatile("pushq %[selector];"
                "leaq dummyLabel(%%rip), %[dummy];"
@@ -99,8 +119,15 @@ void gdtInit() {
   asm volatile("ltr %[tssSelector]" ::[tssSelector] "m"(tssSelector));
 }
 
+/**
+ * @brief CPUの割り込みを有効にする
+ */
 void EnableCPUInterrupt(void) { asm volatile("sti"); }
 
+/**
+ * @brief 現在のCR3レジスタの値を取得する
+ * @return 現在のCR3レジスタの値
+ */
 unsigned long long GetCR3(void) {
   unsigned long long cr3;
   asm volatile("mov %%cr3, %[value]" : [ value ] "=r"(cr3));
@@ -115,4 +142,7 @@ unsigned char InByte(unsigned short addr) {
 
 void OutByte(unsigned short addr, unsigned char data) { asm volatile("out %[data], %[addr]" : : [ addr ] "d"(addr), [ data ] "a"(data)); }
 
+/**
+ * @brief CPUを休眠状態にする
+ */
 void CpuHalt(void) { asm volatile("hlt"); }

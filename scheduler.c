@@ -38,7 +38,7 @@ void SchedulerStart() { HPETStartPeriodicTimer(SCHEDULER_PERIOD); }
 
 // TODO infinite loop when no process id is available
 /**
- * @brief 当たらしいタスクのIDを決定する
+ * @brief 新しいタスクのIDを決定する
  */
 int NewProcessId() {
   int newProcessId = KERNEL_TASK_ID;

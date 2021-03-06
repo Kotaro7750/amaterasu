@@ -1,8 +1,20 @@
+/**
+ * @file interrupt.c
+ * @brief 割り込み関連の処理
+ */
+
 #include "include/interrupt.h"
 #include "include/graphic.h"
 #include "include/x86_64.h"
 
+/**
+ * @brief IDTの実体
+ */
 struct InterruptDescriptor idt[MAX_INTR_NUM];
+
+/**
+ * @brief IDTRの実体
+ */
 unsigned long long idtr[2];
 
 void DefaultHandler(void);
@@ -13,7 +25,7 @@ void SetInterruptDescriptor(unsigned char interruptNumber, void *handler, unsign
   idt[interruptNumber].Offset0_15 = (unsigned long long)handler;
   // TODO this magic number should be MACRO.
   // kernel code segment
-  idt[interruptNumber].SegmentSelector = 8;
+  idt[interruptNumber].SegmentSelector = CS_SEGMENT_SELECTOR_KERNEL;
   idt[interruptNumber].IST = 0;
   idt[interruptNumber]._zero1 = 0;
   // TODO this magic number should be MACRO

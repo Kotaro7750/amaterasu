@@ -7,6 +7,7 @@
 #include "include/paging.h"
 #include "include/physicalMemory.h"
 #include "include/scheduler.h"
+#include "include/x86_64.h"
 
 /**
  * @brief execシステムコールのハンドラ
@@ -26,8 +27,7 @@ void execHandler(unsigned long long entryPoint) {
 
   /* push SS */
   --sp;
-  //*sp = 0x0;
-  *sp = 35;
+  *sp = SS_SEGMENT_SELECTOR_USER;
 
   /* push old RSP */
   --sp;
@@ -39,8 +39,7 @@ void execHandler(unsigned long long entryPoint) {
 
   /* push CS */
   --sp;
-  //*sp = 8;
-  *sp = 27;
+  *sp = CS_SEGMENT_SELECTOR_USER;
 
   /* push RIP */
   --sp;
