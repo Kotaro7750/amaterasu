@@ -6,4 +6,4 @@
 /fs/EFI/BOOT/*
 !/fs/EFI/BOOT/.gitkeep
 
-/doc
+/doxygen
