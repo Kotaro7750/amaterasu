@@ -1,3 +1,7 @@
+/**
+ * @file interrupt.h
+ * @brief 割り込み処理のヘッダ
+ */
 #ifndef _INTERRUPT_H_
 #define _INTERRUPT_H_
 
@@ -7,6 +11,9 @@
 #define GENERAL_PROTECTION_FAULT_EXCP_NUM 13
 #define PAGE_FAULT_EXCP_NUM 14
 
+/**
+ * @brief 割り込みディスクリプタ
+ */
 struct InterruptDescriptor {
   unsigned short Offset0_15;
   unsigned short SegmentSelector;
