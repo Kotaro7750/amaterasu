@@ -1,6 +1,6 @@
 /**
  * @file scheduler.h
- * @brief タスク関連処理用のヘッダ
+ * @brief タスクスケジューリング処理のヘッダ
  */
 #ifndef _SCHEDULER_H_
 #define _SCHEDULER_H_
