@@ -9,6 +9,7 @@
 #include "include/graphic.h"
 #include "include/hpet.h"
 #include "include/interrupt.h"
+#include "include/fat.h"
 #include "include/kbc.h"
 #include "include/paging.h"
 #include "include/physicalMemory.h"
@@ -96,14 +97,14 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   // Schedule(0);
   // SchedulerStart();
 
-  unsigned char buffer[512];
-  ATARead(0, buffer);
-  //struct MasterBootRecord mbr = *(struct MasterBootRecord *)(buffer);
-  //struct MBRPartitionTableEntry pt = mbr.FirstPartitionTable;
+  DriveInit();
 
-  //unsigned int lbaStart = pt.PartitionStartLBA;
+  // struct MasterBootRecord mbr = *(struct MasterBootRecord *)(buffer);
+  // struct MBRPartitionTableEntry pt = mbr.FirstPartitionTable;
 
-  //ATARead(lbaStart, buffer);
+  // unsigned int lbaStart = pt.PartitionStartLBA;
+
+  // ATARead(lbaStart, buffer);
 
   while (1)
     CpuHalt();

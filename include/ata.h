@@ -29,6 +29,7 @@ struct ATADriveInfo {
 
 struct ATARequestQueueEntry {
   unsigned char IsWrite; // 0 for read, 1 for write
+  unsigned int lba;
   unsigned int SizeOfBytes;
   unsigned char IsComplete;
   unsigned char *buffer;
@@ -40,31 +41,12 @@ struct ATARequestQueue {
   struct ATARequestQueueEntry queueBody[ATA_REQUEST_QUEUE_CAPACITY];
 };
 
-struct __attribute__((packed)) MBRPartitionTableEntry {
-  unsigned char Attributes;
-  unsigned char PartitionStartCHS[3];
-  unsigned char PartitionType;
-  unsigned char PartitionEndCHS[3];
-  unsigned int PartitionStartLBA;
-  unsigned int NumberOfSectors;
-};
-
-struct __attribute__((packed)) MasterBootRecord {
-  unsigned char BootStrap[440];
-  unsigned int DiskID;
-  unsigned short Reserved;
-  struct MBRPartitionTableEntry FirstPartitionTable;
-  struct MBRPartitionTableEntry SecondPartitionTable;
-  struct MBRPartitionTableEntry ThirdPartitionTable;
-  struct MBRPartitionTableEntry FourthPartitionTable;
-  unsigned short Signature;
-};
-
 void ATAInit();
 unsigned char ATAIdentify(enum ATABusSelector busSelector, enum ATADriveSelector driveSelector);
-void ATASetDriveInfo(unsigned short identifyReturn[], int driveInforIndex);
-void ATARead(unsigned int lba, unsigned char buffer[512]);
-unsigned char ATARequestQueuePush(unsigned char isWrite, unsigned int sizeOfBytes, unsigned char *buffer);
-unsigned char ATARequestQueueFront(struct ATARequestQueueEntry *requestQueueEntry);
+int ATARead(unsigned int lba, unsigned char buffer[512]);
+
+int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, unsigned int sizeOfBytes, unsigned char *buffer);
+struct ATARequestQueueEntry *ATARequestQueueFront();
+char ATARequestComplete(int index);
 void ATARequestQueuePop();
 #endif

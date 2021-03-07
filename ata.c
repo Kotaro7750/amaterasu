@@ -1,57 +1,49 @@
+/**
+ * @file ata.c
+ * @brief ATAのドライバ処理
+ */
 #include "include/ata.h"
+#include "include/fat.h"
 #include "include/graphic.h"
 #include "include/interrupt.h"
 #include "include/pic.h"
 #include "include/x86_64.h"
 
-struct ATADriveInfo driveInfo[4];
 struct ATARequestQueue ATArequestQueue;
 
 void ATAHandlerASM();
 
 void ATAInit() {
-  for (int i = 0; i < 4; i++) {
-    driveInfo[i].Present = 0;
-  }
+  ATArequestQueue.HeadIndex = 0;
+  ATArequestQueue.Size = 0;
 
-  unsigned char isActive = ATAIdentify(ATABusPrimary, ATADriveMaster);
-  if (isActive) {
-    unsigned short identifyReturn[256];
-    for (int i = 0; i < 256; i++) {
-      identifyReturn[i] = InShort(ATA_IO_BASE_PRIMARY);
+  for (int drive = 0; drive < 4; drive++) {
+    enum ATABusSelector bus;
+    if ((drive & 1) == 0) {
+      bus = ATABusPrimary;
+    } else {
+      bus = ATABusSecondary;
     }
-    ATASetDriveInfo(identifyReturn, 0);
-    driveInfo[0].Present = 1;
-  }
 
-  isActive = ATAIdentify(ATABusPrimary, ATADriveSlave);
-  if (isActive) {
-    unsigned short identifyReturn[256];
-    for (int i = 0; i < 256; i++) {
-      identifyReturn[i] = InShort(ATA_IO_BASE_PRIMARY);
+    enum ATADriveSelector master_slave;
+    if (((drive >> 1) & 1) == 0) {
+      master_slave = ATADriveMaster;
+    } else {
+      master_slave = ATADriveSlave;
     }
-    ATASetDriveInfo(identifyReturn, 1);
-    driveInfo[1].Present = 1;
-  }
 
-  isActive = ATAIdentify(ATABusSecondary, ATADriveMaster);
-  if (isActive) {
-    unsigned short identifyReturn[256];
-    for (int i = 0; i < 256; i++) {
-      identifyReturn[i] = InShort(ATA_IO_BASE_PRIMARY);
+    unsigned char isActive = ATAIdentify(bus, master_slave);
+    if (isActive) {
+      unsigned short identifyReturn[256];
+      for (int i = 0; i < 256; i++) {
+        if (bus == ATABusPrimary) {
+          identifyReturn[i] = InShort(ATA_IO_BASE_PRIMARY);
+        } else {
+          identifyReturn[i] = InShort(ATA_IO_BASE_SECONDARY);
+        }
+      }
+      drives[drive].isValid = 1;
     }
-    ATASetDriveInfo(identifyReturn, 2);
-    driveInfo[2].Present = 1;
-  }
-
-  isActive = ATAIdentify(ATABusSecondary, ATADriveSlave);
-  if (isActive) {
-    unsigned short identifyReturn[256];
-    for (int i = 0; i < 256; i++) {
-      identifyReturn[i] = InShort(ATA_IO_BASE_PRIMARY);
-    }
-    ATASetDriveInfo(identifyReturn, 3);
-    driveInfo[3].Present = 1;
   }
 
   void *handler;
@@ -61,7 +53,6 @@ void ATAInit() {
 }
 
 void ATAHandler() {
-  puts("ATA\n");
   // TODO プライマリ決め打ちはよくない
   unsigned short ioBase = ATA_IO_BASE_PRIMARY;
 
@@ -72,20 +63,20 @@ void ATAHandler() {
   }
 
   unsigned char buffer[512];
+  struct ATARequestQueueEntry* request = ATARequestQueueFront();
   if (isError) {
     puts("ERROR\n");
   } else {
     for (int i = 0; i < 256; i++) {
       unsigned short data = InShort(ioBase);
       // maybe little endian
-      if (data != 0) {
-        puth(data);
-        puts("\n");
-      }
-      buffer[2 * i] = data & 0xff;
-      buffer[2 * i + 1] = (data >> 8) & 0xff;
+      request->buffer[2 * i] = data & 0xff;
+      request->buffer[2 * i + 1] = (data >> 8) & 0xff;
     }
   }
+
+  request->IsComplete = 1;
+  ATARequestQueuePop();
 
   SendEndOfInterrupt(ATA_INTERRUPT_NUM);
 }
@@ -147,97 +138,53 @@ unsigned char ATAIdentify(enum ATABusSelector busSelector, enum ATADriveSelector
   return 1;
 }
 
-void ATASetDriveInfo(unsigned short identifyReturn[], int driveInforIndex) {
-  for (int i = 0; i < 256; i++) {
-    unsigned short data = identifyReturn[i];
-    switch (i) {
-    case 1:
-      driveInfo[driveInforIndex].CylinderNumber = data;
-      break;
-    case 3:
-      driveInfo[driveInforIndex].HeadNumber = data;
-      break;
-    case 5:
-      driveInfo[driveInforIndex].BytesOfSector = data;
-      break;
-    case 6:
-      driveInfo[driveInforIndex].SectorNumberPerTrack = data;
-      break;
-    default:
-      break;
-    }
-  }
-}
-
-void ATARead(unsigned int lba, unsigned char buffer[512]) {
-  if (ATARequestQueuePush(0, 512, buffer) == 0) {
-    return;
+int ATARead(unsigned int lba, unsigned char buffer[512]) {
+  int pushedIndex = ATARequestQueuePush(0, lba, 512, buffer);
+  if (pushedIndex == -1) {
+    return -1;
   }
 
-  int sectorCount = 1;
-  unsigned short ioBase = ATA_IO_BASE_PRIMARY;
-  unsigned short controlBase = ATA_CONTROL_BASE_PRIMARY;
-  OutByte(ioBase + 6, 0xe0 | ((lba >> 24) & 0x0f));
-  OutByte(controlBase, 0x0);
+  if (ATArequestQueue.Size == 1) {
+    int sectorCount = 1;
+    unsigned short ioBase = ATA_IO_BASE_PRIMARY;
+    unsigned short controlBase = ATA_CONTROL_BASE_PRIMARY;
+    OutByte(ioBase + 6, 0xe0 | ((lba >> 24) & 0x0f));
+    OutByte(controlBase, 0x0);
 
-  OutByte(ioBase + 2, (unsigned char)sectorCount);
-  OutByte(ioBase + 3, (unsigned char)(lba & 0xff));
-  OutByte(ioBase + 4, (unsigned char)(lba >> 8));
-  OutByte(ioBase + 5, (unsigned char)(lba >> 16));
+    OutByte(ioBase + 2, (unsigned char)sectorCount);
+    OutByte(ioBase + 3, (unsigned char)(lba & 0xff));
+    OutByte(ioBase + 4, (unsigned char)(lba >> 8));
+    OutByte(ioBase + 5, (unsigned char)(lba >> 16));
 
-  OutByte(ioBase + 7, 0x20);
-
-  // unsigned char status = InByte(ioBase + 7);
-  // unsigned char isError = 0;
-  // while (1) {
-  //  if (ATA_STATUS_REGISTER_ERR(status) || ATA_STATUS_REGISTER_DF(status)) {
-  //    isError = 1;
-  //    break;
-  //  }
-  //  if (ATA_STATUS_REGISTER_DRQ(status) && ATA_STATUS_REGISTER_BSY(status) == 0) {
-  //    break;
-  //  }
-  //  status = InByte(ioBase + 7);
-  //}
-
-  // if (isError) {
-  //} else {
-  //  for (int i = 0; i < 256; i++) {
-  //    unsigned short data = InShort(ioBase);
-  //    // maybe little endian
-  //    buffer[2 * i] = data & 0xff;
-  //    buffer[2 * i + 1] = (data >> 8) & 0xff;
-  //  }
-  //}
+    OutByte(ioBase + 7, 0x20);
+  }
+  return pushedIndex;
 }
 
-// インデックスを返すようにしないと完了かどうかわからない
-unsigned char ATARequestQueuePush(unsigned char isWrite, unsigned int sizeOfBytes, unsigned char *buffer) {
+// インデックスを返す
+int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, unsigned int sizeOfBytes, unsigned char *buffer) {
   if (ATArequestQueue.Size == ATA_REQUEST_QUEUE_CAPACITY) {
-    return 0;
+    return -1;
   }
 
-  ATArequestQueue.Size++;
   int pushedIndex = (ATArequestQueue.HeadIndex + ATArequestQueue.Size) % ATA_REQUEST_QUEUE_CAPACITY;
+  ATArequestQueue.Size++;
 
   ATArequestQueue.queueBody[pushedIndex].IsWrite = isWrite;
+  ATArequestQueue.queueBody[pushedIndex].lba = lba;
   ATArequestQueue.queueBody[pushedIndex].SizeOfBytes = sizeOfBytes;
   ATArequestQueue.queueBody[pushedIndex].buffer = buffer;
   ATArequestQueue.queueBody[pushedIndex].IsComplete = 0;
 
-  return 1;
+  return pushedIndex;
 }
 
-unsigned char ATARequestQueueFront(struct ATARequestQueueEntry *requestQueueEntry) {
-  if (ATArequestQueue.Size == 0) {
-    return 0;
-  }
+struct ATARequestQueueEntry* ATARequestQueueFront(){
+  return &(ATArequestQueue.queueBody[ATArequestQueue.HeadIndex]);
+}
 
-  requestQueueEntry->IsWrite = ATArequestQueue.queueBody[ATArequestQueue.HeadIndex].IsWrite;
-  requestQueueEntry->SizeOfBytes = ATArequestQueue.queueBody[ATArequestQueue.HeadIndex].SizeOfBytes;
-  requestQueueEntry->buffer = ATArequestQueue.queueBody[ATArequestQueue.HeadIndex].buffer;
-
-  return 1;
+char ATARequestComplete(int index){
+  return ATArequestQueue.queueBody[index].IsComplete;
 }
 
 void ATARequestQueuePop() {

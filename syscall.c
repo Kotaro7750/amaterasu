@@ -1,4 +1,9 @@
+/**
+ * @file syscall.c
+ * @brief システムコール処理
+ */
 #include "include/syscall.h"
+#include "include/ata.h"
 #include "include/graphic.h"
 #include "include/interrupt.h"
 #include "include/pic.h"
@@ -13,13 +18,17 @@ void SyscallInit() {
   EnableInterruptOnPIC(SYSCALL_INTERRUPT_NUM);
 }
 
-unsigned long long SyscallHandler(unsigned long long syscallId,
-                                  unsigned long long arg1,
-                                  unsigned long long arg2 __attribute__((unused)),
-                                  unsigned long long arg3 __attribute__((unused))) {
+/**
+ * @brief システムコールによるソフトウェア割り込みのハンドラ
+ */
+unsigned long long
+SyscallHandler(unsigned long long syscallId, unsigned long long arg1, unsigned long long arg2, unsigned long long arg3 __attribute__((unused))) {
   unsigned long long ret;
 
   switch (syscallId) {
+  case SYSCALL_READ:
+    ret = ATARead((unsigned int)arg1, (unsigned char *)arg2);
+    break;
   case SYSCALL_PUT:
     putc((char)arg1);
     break;
@@ -31,12 +40,13 @@ unsigned long long SyscallHandler(unsigned long long syscallId,
     break;
   }
 
-  ret = 0xbeefcafe01234567;
-
   SendEndOfInterrupt(SYSCALL_INTERRUPT_NUM);
   return ret;
 }
 
+/**
+ * @brief ユーザープログラムからシステムコールの呼び出しをする
+ */
 unsigned long long Syscall(unsigned long long syscallId, unsigned long long arg1, unsigned long long arg2, unsigned long long arg3) {
   unsigned long long ret;
   asm volatile("movq %[syscallId], %%rdi\n"
