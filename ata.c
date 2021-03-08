@@ -9,10 +9,16 @@
 #include "include/pic.h"
 #include "include/x86_64.h"
 
+/**
+ * @brief ATAへの読み書きリクエストの待ち行列
+ */
 struct ATARequestQueue ATArequestQueue;
 
 void ATAHandlerASM();
 
+/**
+ * @brief ディスク一覧の初期化，割り込みハンドラ登録
+ */
 void ATAInit() {
   ATArequestQueue.HeadIndex = 0;
   ATArequestQueue.Size = 0;
@@ -52,6 +58,9 @@ void ATAInit() {
   EnableInterruptOnPIC(ATA_INTERRUPT_NUM);
 }
 
+/**
+ * @brief 読み書き終了時の割り込みハンドラ
+ */
 void ATAHandler() {
   // TODO プライマリ決め打ちはよくない
   unsigned short ioBase = ATA_IO_BASE_PRIMARY;
@@ -138,6 +147,9 @@ unsigned char ATAIdentify(enum ATABusSelector busSelector, enum ATADriveSelector
   return 1;
 }
 
+/**
+ * @brief 1セクター分の読み取りリクエストを発行する
+ */
 int ATARead(unsigned int lba, unsigned char buffer[512]) {
   int pushedIndex = ATARequestQueuePush(0, lba, 512, buffer);
   if (pushedIndex == -1) {
@@ -161,7 +173,10 @@ int ATARead(unsigned int lba, unsigned char buffer[512]) {
   return pushedIndex;
 }
 
-// インデックスを返す
+/**
+ * @brief ATAリクエストキューにプッシュする
+ * @return プッシュされたインデックス
+ */
 int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, unsigned int sizeOfBytes, unsigned char *buffer) {
   if (ATArequestQueue.Size == ATA_REQUEST_QUEUE_CAPACITY) {
     return -1;
@@ -179,6 +194,9 @@ int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, unsigned int si
   return pushedIndex;
 }
 
+/**
+ * @brief ATAリクエストキューの先頭を取得する
+ */
 struct ATARequestQueueEntry* ATARequestQueueFront(){
   return &(ATArequestQueue.queueBody[ATArequestQueue.HeadIndex]);
 }
@@ -187,6 +205,9 @@ char ATARequestComplete(int index){
   return ATArequestQueue.queueBody[index].IsComplete;
 }
 
+/**
+ * @brief ATAリクエストキューからポップする
+ */
 void ATARequestQueuePop() {
   if (ATArequestQueue.Size == 0) {
     return;
