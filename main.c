@@ -5,11 +5,11 @@
 
 #include "include/acpi.h"
 #include "include/ata.h"
+#include "include/fat.h"
 #include "include/fb.h"
 #include "include/graphic.h"
 #include "include/hpet.h"
 #include "include/interrupt.h"
-#include "include/fat.h"
 #include "include/kbc.h"
 #include "include/paging.h"
 #include "include/physicalMemory.h"
@@ -97,7 +97,7 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   // Schedule(0);
   // SchedulerStart();
 
-  DriveInit();
+   DriveInit();
 
   // struct MasterBootRecord mbr = *(struct MasterBootRecord *)(buffer);
   // struct MBRPartitionTableEntry pt = mbr.FirstPartitionTable;
