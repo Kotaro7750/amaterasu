@@ -13,6 +13,7 @@
 
 struct kHeapBlock {
   char order;
+  char isAllocated;
   unsigned int id;
   struct kHeapBlock *prev;
   struct kHeapBlock *next;
@@ -23,4 +24,5 @@ unsigned long long kmalloc(unsigned int size);
 void kfree(unsigned long long addr);
 void AddTokHeapOrder(char order, unsigned int id);
 void DeleteFromkHeapOrder(char order, unsigned int id);
+void DumpkHeap();
 #endif

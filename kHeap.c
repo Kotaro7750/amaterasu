@@ -21,6 +21,7 @@ void kHeapInit() {
 
   for (int i = 0; i < KHEAP_BLOCK_NUM; i++) {
     kHeapBlocks[i].order = 0;
+    kHeapBlocks[i].isAllocated = 0;
     kHeapBlocks[i].id = i;
     kHeapBlocks[i].prev = 0x0;
     kHeapBlocks[i].next = 0x0;
@@ -64,6 +65,7 @@ unsigned long long kmalloc(unsigned int size) {
       struct kHeapBlock *front = kHeapOrder[currentOrder];
       DeleteFromkHeapOrder(currentOrder, front->id);
       front->order = currentOrder;
+      front->isAllocated = 1;
 
       return kHeapStart + KHEAP_BLOCK_SIZE * front->id;
     }
@@ -79,23 +81,22 @@ void kfree(unsigned long long addr) {
 
   unsigned int id = (addr - kHeapStart) / KHEAP_BLOCK_SIZE;
   struct kHeapBlock *freedBlock = &(kHeapBlocks[id]);
+  if (freedBlock->isAllocated == 0) {
+    return;
+  }
+
   AddTokHeapOrder(freedBlock->order, id);
 
   for (char order = freedBlock->order; order < KHEAP_MAX_ORDER; order++) {
     unsigned int buddyId = id ^ (1 << order);
 
-    struct kHeapBlock *buddy = kHeapOrder[order];
-    while (buddy != 0x0) {
-      if (buddy->id == buddyId) {
-        break;
-      }
-      buddy = buddy->next;
-    }
+    struct kHeapBlock *buddy = &(kHeapBlocks[buddyId]);
 
     // buddy is allocated
-    if (buddy == 0x0) {
+    if (buddy->isAllocated) {
       return;
     }
+
     DeleteFromkHeapOrder(order, id);
     DeleteFromkHeapOrder(order, buddyId);
 
@@ -109,35 +110,45 @@ void AddTokHeapOrder(char order, unsigned int id) {
   struct kHeapBlock *added = &(kHeapBlocks[id]);
 
   added->order = order;
+  added->isAllocated = 0;
   added->prev = 0x0;
   added->next = front;
   kHeapOrder[order] = added;
 }
 
 void DeleteFromkHeapOrder(char order, unsigned int id) {
-  struct kHeapBlock *block = kHeapOrder[order];
-  while (block != 0x0) {
-    if (block->id == id) {
-      struct kHeapBlock *prev = block->prev;
-      struct kHeapBlock *next = block->next;
+  struct kHeapBlock *block = &(kHeapBlocks[id]);
+  struct kHeapBlock *prev = block->prev;
+  struct kHeapBlock *next = block->next;
 
-      // re-link
-      if (prev == 0x0) {
-        kHeapOrder[order] = next;
-      } else {
-        prev->next = next;
-      }
+  // re-link
+  if (prev == 0x0) {
+    kHeapOrder[order] = next;
+  } else {
+    prev->next = next;
+  }
 
-      if (next != 0x0) {
-        next->prev = prev;
-      }
+  if (next != 0x0) {
+    next->prev = prev;
+  }
 
-      // init block
-      block->order = 0;
-      block->prev = 0x0;
-      block->next = 0x0;
+  // init block
+  block->order = 0;
+  block->isAllocated = 0;
+  block->prev = 0x0;
+  block->next = 0x0;
+}
+
+void DumpkHeap() {
+  for (char order = KHEAP_MAX_ORDER; order >= 0; order--) {
+    puth(order);
+    puts(" ");
+    struct kHeapBlock *block = kHeapOrder[order];
+    while (block != 0x0) {
+      puth(block->id);
+      puts(",");
+      block = block->next;
     }
-
-    block = block->next;
+    puts("\n");
   }
 }

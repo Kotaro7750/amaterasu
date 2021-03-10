@@ -100,7 +100,22 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   // SchedulerStart();
 
   // DriveInit();
+  
+  unsigned long long addr1 = kmalloc(256*2);
+  DumpkHeap();
+  puts("\n");
 
+  unsigned long long addr2 = kmalloc(256);
+  DumpkHeap();
+  puts("\n");
+
+  kfree(addr1);
+  DumpkHeap();
+  puts("\n");
+
+  kfree(addr1);
+  DumpkHeap();
+  puts("\n");
 
   while (1)
     CpuHalt();
