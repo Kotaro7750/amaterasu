@@ -6,6 +6,7 @@
 #include "include/interrupt.h"
 #include "include/graphic.h"
 #include "include/x86_64.h"
+#include "include/syscall.h"
 
 /**
  * @brief IDTの実体
@@ -33,7 +34,11 @@ void SetInterruptDescriptor(unsigned char interruptNumber, void *handler, unsign
   idt[interruptNumber].Type = 0xe;
   idt[interruptNumber]._zero2 = 0;
   // TODO this magic number should be MACRO
-  idt[interruptNumber].DPL = 0;
+  if (interruptNumber == SYSCALL_INTERRUPT_NUM) {
+    idt[interruptNumber].DPL = 3;
+  }else {
+    idt[interruptNumber].DPL = 0;
+  }
   idt[interruptNumber].P = present;
   idt[interruptNumber].Offset16_31 = (unsigned long long)handler >> 16;
   idt[interruptNumber].Offset32_63 = (unsigned long long)handler >> 32;
@@ -66,11 +71,11 @@ void DoubleFaultHandler(void) {
   }
 }
 
-void GeneralProtectionFaultHandler(void){
+void GeneralProtectionFaultHandler(void) {
   unsigned long long errorCode;
   unsigned long long rbp;
   asm volatile("mov %%rbp, %[Rbp]" : [ Rbp ] "=r"(rbp));
-  errorCode = *(unsigned long long*)(rbp + 16);
+  errorCode = *(unsigned long long *)(rbp + 16);
 
   char external = errorCode & 0x1;
   char tbl = (errorCode >> 1) & 0x3;

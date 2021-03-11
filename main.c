@@ -66,6 +66,20 @@ void taskC() {
   }
 }
 
+void accessHigher() {
+  unsigned long long addr = 0xfffffffffffff000;
+  *(unsigned long long*)addr = 0xdeadbeaf;
+  puth(*(unsigned long long*)addr);
+  puts("\n");
+  addr = Syscall(SYSCALL_PHYSADDR, addr, 0, 0);
+  puth(addr);
+  puts("\n");
+  puth(*(unsigned long long*)addr);
+
+  while (1) {
+  }
+}
+
 /**
  * @brief カーネルのスタートアップルーチン
  * @param[in] _t 未使用
@@ -92,30 +106,29 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
 
   EnableCPUInterrupt();
 
-  // Syscall(SYSCALL_EXEC, (unsigned long long)taskA, 0, 0);
+  Syscall(SYSCALL_EXEC, (unsigned long long)accessHigher, 0, 0);
   // Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
   // Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
 
-  // Schedule(0);
-  // SchedulerStart();
+  SchedulerStart();
 
   // DriveInit();
-  
-  unsigned long long addr1 = kmalloc(256*2);
-  DumpkHeap();
-  puts("\n");
 
-  unsigned long long addr2 = kmalloc(256);
-  DumpkHeap();
-  puts("\n");
+  // unsigned long long addr1 = kmalloc(256 * 2);
+  // DumpkHeap();
+  // puts("\n");
 
-  kfree(addr1);
-  DumpkHeap();
-  puts("\n");
+  // unsigned long long addr2 = kmalloc(256);
+  // DumpkHeap();
+  // puts("\n");
 
-  kfree(addr1);
-  DumpkHeap();
-  puts("\n");
+  // kfree(addr1);
+  // DumpkHeap();
+  // puts("\n");
+
+  // kfree(addr1);
+  // DumpkHeap();
+  // puts("\n");
 
   while (1)
     CpuHalt();

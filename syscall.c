@@ -6,6 +6,7 @@
 #include "include/ata.h"
 #include "include/graphic.h"
 #include "include/interrupt.h"
+#include "include/paging.h"
 #include "include/pic.h"
 #include "include/process.h"
 
@@ -37,6 +38,9 @@ SyscallHandler(unsigned long long syscallId, unsigned long long arg1, unsigned l
     break;
   case SYSCALL_EXIT:
     exitHandler(arg1);
+    break;
+  case SYSCALL_PHYSADDR:
+    ret = CalcPhyAddr(arg1);
     break;
   }
 

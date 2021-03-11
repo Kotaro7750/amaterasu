@@ -122,7 +122,6 @@ unsigned long long CalcPhyAddr(unsigned long long LinearAddr) {
   struct L3PTEntry *l3ptBase = (struct L3PTEntry *)(l4ptEntry.L3PTPhysAddr << 12);
   struct L3PTEntry l3ptEntry = l3ptBase[l3ptIndex];
   if (l3ptEntry.Present != 1) {
-    puth(l3ptIndex);
     puts("\nNOT PRESENT 3\n");
     return 0;
   }
