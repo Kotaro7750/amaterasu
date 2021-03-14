@@ -68,13 +68,16 @@ void taskC() {
 
 void accessHigher() {
   unsigned long long addr = 0xfffffffffffff000;
-  *(unsigned long long*)addr = 0xdeadbeaf;
-  puth(*(unsigned long long*)addr);
+  *(unsigned long long *)addr = 0xdeadbeaf;
+  puth(*(unsigned long long *)addr);
   puts("\n");
+
   addr = Syscall(SYSCALL_PHYSADDR, addr, 0, 0);
   puth(addr);
   puts("\n");
-  puth(*(unsigned long long*)addr);
+
+  puth(*(unsigned long long *)addr);
+  puts("\n");
 
   while (1) {
   }
@@ -88,8 +91,9 @@ void accessHigher() {
  */
 void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, struct PhysicalMemoryFreeMapInfo *freeMapInfo) {
   FBInit(&(_pi->fb));
-  gdtInit();
   GraphicInit();
+  PhysicalMemoryManagementInit(*freeMapInfo);
+  gdtInit();
 
   idtInit();
   picInit();
@@ -100,15 +104,14 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   SchedulerInit();
   ATAInit();
 
-  PhysicalMemoryManagementInit(*freeMapInfo);
   PagingInit();
   kHeapInit();
 
   EnableCPUInterrupt();
 
-  Syscall(SYSCALL_EXEC, (unsigned long long)accessHigher, 0, 0);
-  // Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
-  // Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
+  //Syscall(SYSCALL_EXEC, (unsigned long long)accessHigher, 0, 0);
+  Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
+  Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
 
   SchedulerStart();
 

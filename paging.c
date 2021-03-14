@@ -1,4 +1,5 @@
 #include "include/paging.h"
+#include "include/physicalMemory.h"
 #include "include/graphic.h"
 #include "include/interrupt.h"
 #include "include/x86_64.h"
@@ -11,7 +12,7 @@ void PagingInit(void) {
   SetInterruptDescriptor(PAGE_FAULT_EXCP_NUM, handler, 1);
 
   // enable 0~5GB-1
-  struct L3PTEntry1GB *l3ptBase = (struct L3PTEntry1GB *)AllocateSinglePageFrame();
+  struct L3PTEntry1GB *l3ptBase = (struct L3PTEntry1GB *)AllocatePageFrames(1);
   for (int i = 0; i < 512; i++) {
     if (i < 5) {
       l3ptBase[i].Present = 1;
@@ -34,7 +35,7 @@ void PagingInit(void) {
       l3ptBase[i].Present = 0;
     }
   }
-  struct L4PTEntry *l4ptBase = (struct L4PTEntry *)AllocateSinglePageFrame();
+  struct L4PTEntry *l4ptBase = (struct L4PTEntry *)AllocatePageFrames(1);
   for (int i = 0; i < 512; i++) {
     if (i == 0) {
       l4ptBase[i].Present = 1;

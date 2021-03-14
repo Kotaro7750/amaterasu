@@ -17,7 +17,7 @@ struct kHeapBlock kHeapBlocks[KHEAP_BLOCK_NUM];
 struct kHeapBlock *kHeapOrder[KHEAP_MAX_ORDER + 1];
 
 void kHeapInit() {
-  kHeapStart = AllocateSinglePageFrame();
+  kHeapStart = AllocatePageFrames(1);
 
   for (int i = 0; i < KHEAP_BLOCK_NUM; i++) {
     kHeapBlocks[i].order = 0;

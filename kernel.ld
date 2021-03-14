@@ -3,7 +3,7 @@ ENTRY(start_kernel)
 
 MEMORY
 {
-  ram(rwx) : ORIGIN = 0x100000, LENGTH = 1m
+  ram(rwx) : ORIGIN = 0x1300000, LENGTH = 1m
 }
 
 SECTIONS

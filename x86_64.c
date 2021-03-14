@@ -84,9 +84,9 @@ void gdtInit() {
   for (int i = 0; i < 25; i++) {
     tss[i] = 0;
   }
-  unsigned long long ring0rsp =AllocateSinglePageFrame() + PAGE_SIZE - 1; 
+  unsigned long long ring0rsp = AllocatePageFrames(1) + PAGE_SIZE - 1;
   tss[1] = ring0rsp & 0xffffffff;
-  tss[2] = (ring0rsp >> 31) & 0xffffffff;
+  tss[2] = (ring0rsp >> 32) & 0xffffffff;
 
   gdt[5] = GDT_TSS_DESCRIPTOR_LOWER((unsigned long long)(&(tss[0])));
   gdt[6] = GDT_TSS_DESCRIPTOR_HIGHER((unsigned long long)(&(tss[0])));

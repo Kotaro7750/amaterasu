@@ -17,7 +17,7 @@
  * @see taskList
  */
 void execHandler(unsigned long long entryPoint) {
-  unsigned long long *sp = (unsigned long long *)(AllocateSinglePageFrame() + PAGE_SIZE - 1);
+  unsigned long long *sp = (unsigned long long *)(AllocatePageFrames(1) + PAGE_SIZE - 1);
   unsigned long long old_sp = (unsigned long long)sp;
 
   // enable user mode
@@ -52,7 +52,7 @@ void execHandler(unsigned long long entryPoint) {
     *sp = 0;
   }
 
-  struct L3PTEntry1GB *l3ptBaseLower = (struct L3PTEntry1GB *)AllocateSinglePageFrame();
+  struct L3PTEntry1GB *l3ptBaseLower = (struct L3PTEntry1GB *)AllocatePageFrames(1);
   for (int i = 0; i < 512; i++) {
     if (i < 5) {
       l3ptBaseLower[i].Present = 1;
@@ -76,7 +76,7 @@ void execHandler(unsigned long long entryPoint) {
     }
   }
 
-  struct L1PTEntry *l1ptBaseHigher = (struct L1PTEntry *)AllocateSinglePageFrame();
+  struct L1PTEntry *l1ptBaseHigher = (struct L1PTEntry *)AllocatePageFrames(1);
   for (int i = 0; i < 512; i++) {
     if (i == 511) {
       l1ptBaseHigher[i].Present = 1;
@@ -98,7 +98,7 @@ void execHandler(unsigned long long entryPoint) {
     }
   }
 
-  struct L2PTEntry *l2ptBaseHigher = (struct L2PTEntry *)AllocateSinglePageFrame();
+  struct L2PTEntry *l2ptBaseHigher = (struct L2PTEntry *)AllocatePageFrames(1);
   for (int i = 0; i < 512; i++) {
     if (i == 511) {
       l2ptBaseHigher[i].Present = 1;
@@ -118,7 +118,7 @@ void execHandler(unsigned long long entryPoint) {
     }
   }
 
-  struct L3PTEntry *l3ptBaseHigher = (struct L3PTEntry *)AllocateSinglePageFrame();
+  struct L3PTEntry *l3ptBaseHigher = (struct L3PTEntry *)AllocatePageFrames(1);
   for (int i = 0; i < 512; i++) {
     if (i == 511) {
       l3ptBaseHigher[i].Present = 1;
@@ -138,7 +138,7 @@ void execHandler(unsigned long long entryPoint) {
     }
   }
 
-  struct L4PTEntry *l4ptBase = (struct L4PTEntry *)AllocateSinglePageFrame();
+  struct L4PTEntry *l4ptBase = (struct L4PTEntry *)AllocatePageFrames(1);
   for (int i = 0; i < 512; i++) {
     if (i == 0) {
       l4ptBase[i].Present = 1;
