@@ -77,6 +77,7 @@ unsigned long long CalcGDTEntry(unsigned long long base, unsigned long long limi
 unsigned long long CalcTSSDescriptorHigher(unsigned long long base);
 
 void gdtInit();
+void SwitchKernelStack(unsigned long long ring0rsp);
 void EnableCPUInterrupt(void);
 unsigned long long GetCR3(void);
 unsigned char InByte(unsigned short addr);

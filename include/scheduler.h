@@ -20,6 +20,8 @@ struct TaskListEntry {
   unsigned long long Reserved : 62; //!< 予約領域
   unsigned long long cr3;
   unsigned long long rsp;
+  unsigned long long ring0stackBase;
+  unsigned long long rip;
 };
 
 extern struct TaskListEntry taskList[TASK_MAX_NUMBER];
@@ -28,6 +30,8 @@ extern int currentTaskId;
 void SchedulerInit();
 void SchedulerStart();
 int NewProcessId();
-void Schedule(unsigned long long currentRsp);
+void Schedule();
+void sleep();
+void wakeup(int taskId);
 
 #endif

@@ -76,6 +76,9 @@ union TNCCR {
   };
 };
 
+extern void HPETHandlerRet(void);
+extern void ScheduleRet(void);
+
 void HPETInit();
 void HPETStartPeriodicTimer(unsigned long long us);
 void DumpGCIDR();

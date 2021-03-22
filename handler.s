@@ -70,6 +70,7 @@ ATAHandlerASM:
   iretq
 
   .global HPETHandlerASM
+  .global HPETHandlerRet
 HPETHandlerASM:
   push    %rax
   push    %rcx
@@ -80,6 +81,7 @@ HPETHandlerASM:
   push    %rdi
   mov     %rsp, %rdi
   call    HPETHandler
+HPETHandlerRet:
   pop     %rdi
   pop     %rsi
   pop     %rbp

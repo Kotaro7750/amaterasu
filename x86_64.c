@@ -3,6 +3,7 @@
  * @brief x86_64アーキテクチャ固有の処理
  */
 #include "include/x86_64.h"
+#include "include/graphic.h"
 #include "include/physicalMemory.h"
 
 unsigned char
@@ -84,9 +85,6 @@ void gdtInit() {
   for (int i = 0; i < 25; i++) {
     tss[i] = 0;
   }
-  unsigned long long ring0rsp = AllocatePageFrames(1) + PAGE_SIZE - 1;
-  tss[1] = ring0rsp & 0xffffffff;
-  tss[2] = (ring0rsp >> 32) & 0xffffffff;
 
   gdt[5] = GDT_TSS_DESCRIPTOR_LOWER((unsigned long long)(&(tss[0])));
   gdt[6] = GDT_TSS_DESCRIPTOR_HIGHER((unsigned long long)(&(tss[0])));
@@ -117,6 +115,11 @@ void gdtInit() {
 
   unsigned short tssSelector = 40;
   asm volatile("ltr %[tssSelector]" ::[tssSelector] "m"(tssSelector));
+}
+
+void SwitchKernelStack(unsigned long long ring0rsp) {
+  tss[1] = ring0rsp & 0xffffffff;
+  tss[2] = (ring0rsp >> 32) & 0xffffffff;
 }
 
 /**

@@ -62,7 +62,10 @@ void HPETStartPeriodicTimer(unsigned long long us) {
 }
 
 void HPETHandler(unsigned long long currentRsp) {
-  Schedule(currentRsp);
+  Schedule();
+
+  asm volatile (".global ScheduleRet");
+  asm volatile ("ScheduleRet:");
   SendEndOfInterrupt(HPET_INTERRUPT_NUM);
 }
 

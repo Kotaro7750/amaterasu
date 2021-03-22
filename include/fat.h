@@ -6,6 +6,8 @@
 #ifndef _FAT_H_
 #define _FAT_H_
 
+#include "file.h"
+
 /**
  * @brief MBRのパーティションテーブルエントリ
  */
@@ -50,4 +52,5 @@ extern struct Drive drives[4];
 
 void DriveInit();
 void ParseBootRecord(unsigned char BRsector[512], unsigned int startLBA);
+int GetFileInfo(char *filename, struct File *file);
 #endif

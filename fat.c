@@ -4,8 +4,12 @@
  */
 #include "include/fat.h"
 #include "include/ata.h"
+#include "include/file.h"
+#include "include/pic.h"
 #include "include/graphic.h"
+#include "include/scheduler.h"
 #include "include/syscall.h"
+#include "include/util.h"
 
 struct Drive drives[4];
 struct Partition partitions[1];
@@ -40,33 +44,6 @@ void DriveInit() {
   }
 
   ParseBootRecord(buffer, drives[0].MBR.partitionTables[0].startLBA);
-
-  pushedIndex = Syscall(SYSCALL_READ, partitions[0].rootDirStartLBA, (unsigned long long)buffer, 0);
-
-  while (ATARequestComplete(pushedIndex) == 0) {
-    ;
-  }
-
-  for (int i = 0; i < 512 / 32; i++) {
-    if (buffer[32 * i] != 0x00) {
-      if (buffer[32 * i] == 'H' && buffer[32 * i + 1] == 'O' && buffer[32 * i + 2] == 'G' && buffer[32 * i + 3] == 'E') {
-        puts("FOUND\n");
-        unsigned short clusterHead = *(unsigned short *)(buffer + 32 * i + 26);
-        unsigned int filesize = *(unsigned int *)(buffer + 32 * i + 28);
-        pushedIndex =
-            Syscall(SYSCALL_READ, partitions[0].dataStartLBA + partitions[0].sectorsOfCluster * (clusterHead - 2), (unsigned long long)buffer, 0);
-
-        while (ATARequestComplete(pushedIndex) == 0) {
-          ;
-        }
-
-        for (int i = 0; i < filesize; i++) {
-          putc(buffer[i]);
-        }
-        break;
-      }
-    }
-  }
 }
 
 void ParseBootRecord(unsigned char BRsector[512], unsigned int startLBA) {
@@ -93,4 +70,31 @@ void ParseBootRecord(unsigned char BRsector[512], unsigned int startLBA) {
   partitions[0].rootDirStartLBA = partitions[0].dataStartLBA - partitions[0].sectorsOfRootDir;
 
   partitions[0].numbersOfSectors = *(unsigned int *)(BRsector + 0x20);
+}
+
+int GetFileInfo(char *filename, struct File *file) {
+  unsigned char buffer[512];
+  int pushedIndex = ATARead(partitions[0].rootDirStartLBA, buffer);
+
+  while (ATARequestComplete(pushedIndex) == 0) {
+    ;
+  }
+
+  int length = strnlength(filename);
+
+  for (int i = 0; i < 512 / 32; i++) {
+    if (buffer[32 * i] != 0x00) {
+      if (strncmp(filename, (char *)(buffer + 32 * i), strnlength(filename))) {
+        unsigned short clusterHead = *(unsigned short *)(buffer + 32 * i + 26);
+        unsigned int filesize = *(unsigned int *)(buffer + 32 * i + 28);
+
+        file->start = partitions[0].dataStartLBA + partitions[0].sectorsOfCluster * (clusterHead - 2);
+        file->size = filesize;
+
+        return 1;
+      }
+    }
+  }
+
+  return 0;
 }

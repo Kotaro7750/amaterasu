@@ -33,6 +33,7 @@ struct ATARequestQueueEntry {
   unsigned int SizeOfBytes;
   unsigned char IsComplete;
   unsigned char *buffer;
+  int taskId;
 };
 
 struct ATARequestQueue {

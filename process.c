@@ -4,6 +4,7 @@
  */
 #include "include/process.h"
 #include "include/graphic.h"
+#include "include/hpet.h"
 #include "include/paging.h"
 #include "include/physicalMemory.h"
 #include "include/scheduler.h"
@@ -17,40 +18,60 @@
  * @see taskList
  */
 void execHandler(unsigned long long entryPoint) {
-  unsigned long long *sp = (unsigned long long *)(AllocatePageFrames(1) + PAGE_SIZE - 1);
-  unsigned long long old_sp = (unsigned long long)sp;
+  // unsigned long long stackBase = (unsigned long long)(AllocatePageFrames(1) + PAGE_SIZE - 1);
+  unsigned long long stackBase = (unsigned long long)(AllocatePageFrames(1) + PAGE_SIZE - 8);
+  // unsigned long long ring0stackBase = (unsigned long long)(AllocatePageFrames(1) + PAGE_SIZE - 1);
+  unsigned long long ring0stackBase = (unsigned long long)(AllocatePageFrames(1) + PAGE_SIZE - 8);
 
-  // enable user mode
-  // puth((unsigned long long)sp);
+  unsigned long long *sp = (unsigned long long *)ring0stackBase;
 
   int newTaskId = NewProcessId();
 
   /* push SS */
-  --sp;
   *sp = SS_SEGMENT_SELECTOR_USER;
+  --sp;
 
   /* push old RSP */
+  *sp = stackBase;
   --sp;
-  *sp = old_sp;
 
   /* push RFLAGS */
-  --sp;
   *sp = 0x202;
+  --sp;
 
   /* push CS */
-  --sp;
   *sp = CS_SEGMENT_SELECTOR_USER;
+  --sp;
 
   /* push RIP */
-  --sp;
   *sp = entryPoint;
+  --sp;
 
   /* push GR */
   unsigned char i;
   for (i = 0; i < 7; i++) {
-    --sp;
     *sp = 0;
+    --sp;
   }
+
+  *sp = (unsigned long long)HPETHandlerRet;
+  --sp;
+
+  *sp = stackBase;
+  unsigned long long IRQHandlerFrame = (unsigned long long)sp;
+  --sp;
+
+  *sp = (unsigned long long)ScheduleRet;
+  --sp;
+
+  *sp = IRQHandlerFrame;
+  unsigned long long ScheduleFrame = (unsigned long long)sp;
+  --sp;
+
+  *sp = ScheduleFrame;
+  --sp;
+
+  *sp = 0x2;
 
   struct L3PTEntry1GB *l3ptBaseLower = (struct L3PTEntry1GB *)AllocatePageFrames(1);
   for (int i = 0; i < 512; i++) {
@@ -89,7 +110,8 @@ void execHandler(unsigned long long entryPoint) {
       l1ptBaseHigher[i].PAT = 0;
       l1ptBaseHigher[i].Global = 0;
       l1ptBaseHigher[i]._ignored = 0;
-      l1ptBaseHigher[i].PageFramePhysAddr = (old_sp + 1 - PAGE_SIZE) >> 12;
+      // l1ptBaseHigher[i].PageFramePhysAddr = (stackBase + 1 - PAGE_SIZE) >> 12;
+      l1ptBaseHigher[i].PageFramePhysAddr = (stackBase + 8 - PAGE_SIZE) >> 12;
       l1ptBaseHigher[i]._ignored2 = 0;
       l1ptBaseHigher[i].ProtectionKey = 0;
       l1ptBaseHigher[i].ExecuteDisable = 0;
@@ -171,8 +193,12 @@ void execHandler(unsigned long long entryPoint) {
     }
   }
 
-  // taskList[newTaskId].rsp = (unsigned long long)sp;
-  taskList[newTaskId].rsp = (0xffffffffffffffff - (old_sp - (unsigned long long)sp));
+  taskList[newTaskId].rsp = (unsigned long long)sp;
+  // taskList[newTaskId].rsp = (unsigned long long)rsp;
+  // taskList[newTaskId].rsp = (0xffffffffffffffff - (stackBase - (unsigned long long)sp));
+
+  taskList[newTaskId].ring0stackBase = ring0stackBase;
+
   taskList[newTaskId].isValid = 1;
   taskList[newTaskId].isStarted = 1;
   taskList[newTaskId].cr3 = (unsigned long long)l4ptBase;

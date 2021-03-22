@@ -4,6 +4,8 @@
  */
 #include "include/syscall.h"
 #include "include/ata.h"
+#include "include/fat.h"
+#include "include/file.h"
 #include "include/graphic.h"
 #include "include/interrupt.h"
 #include "include/paging.h"
@@ -29,6 +31,9 @@ SyscallHandler(unsigned long long syscallId, unsigned long long arg1, unsigned l
   switch (syscallId) {
   case SYSCALL_READ:
     ret = ATARead((unsigned int)arg1, (unsigned char *)arg2);
+    break;
+  case SYSCALL_OPEN:
+    ret = GetFileInfo((char *)arg1, (struct File *)arg2);
     break;
   case SYSCALL_PUT:
     putc((char)arg1);

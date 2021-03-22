@@ -7,6 +7,7 @@
 #include "include/ata.h"
 #include "include/fat.h"
 #include "include/fb.h"
+#include "include/file.h"
 #include "include/graphic.h"
 #include "include/hpet.h"
 #include "include/interrupt.h"
@@ -66,6 +67,15 @@ void taskC() {
   }
 }
 
+void taskD() {
+  while (1) {
+    putc('D');
+    volatile unsigned long long wait = 10000000;
+    while (wait--)
+      ;
+  }
+}
+
 void accessHigher() {
   unsigned long long addr = 0xfffffffffffff000;
   *(unsigned long long *)addr = 0xdeadbeaf;
@@ -101,21 +111,26 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   ACPIInit(_pi->RSDPAddress);
   HPETInit();
   SyscallInit();
-  SchedulerInit();
   ATAInit();
 
   PagingInit();
   kHeapInit();
+  SchedulerInit();
 
   EnableCPUInterrupt();
 
-  //Syscall(SYSCALL_EXEC, (unsigned long long)accessHigher, 0, 0);
+  // Syscall(SYSCALL_EXEC, (unsigned long long)accessHigher, 0, 0);
   Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
   Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
+  // Syscall(SYSCALL_EXEC, (unsigned long long)taskD, 0, 0);
 
   SchedulerStart();
 
-  // DriveInit();
+  DriveInit();
+
+  struct File file;
+  int ret = Syscall(SYSCALL_OPEN, "HOGE", (unsigned long long)&file, 0);
+  puth(ret);
 
   // unsigned long long addr1 = kmalloc(256 * 2);
   // DumpkHeap();

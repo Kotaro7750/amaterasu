@@ -7,6 +7,7 @@
 #include "include/graphic.h"
 #include "include/interrupt.h"
 #include "include/pic.h"
+#include "include/scheduler.h"
 #include "include/x86_64.h"
 
 /**
@@ -72,7 +73,7 @@ void ATAHandler() {
   }
 
   unsigned char buffer[512];
-  struct ATARequestQueueEntry* request = ATARequestQueueFront();
+  struct ATARequestQueueEntry *request = ATARequestQueueFront();
   if (isError) {
     puts("ERROR\n");
   } else {
@@ -86,6 +87,7 @@ void ATAHandler() {
 
   request->IsComplete = 1;
   ATARequestQueuePop();
+  wakeup(request->taskId);
 
   SendEndOfInterrupt(ATA_INTERRUPT_NUM);
 }
@@ -170,6 +172,8 @@ int ATARead(unsigned int lba, unsigned char buffer[512]) {
 
     OutByte(ioBase + 7, 0x20);
   }
+
+  sleep();
   return pushedIndex;
 }
 
@@ -185,11 +189,14 @@ int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, unsigned int si
   int pushedIndex = (ATArequestQueue.HeadIndex + ATArequestQueue.Size) % ATA_REQUEST_QUEUE_CAPACITY;
   ATArequestQueue.Size++;
 
-  ATArequestQueue.queueBody[pushedIndex].IsWrite = isWrite;
-  ATArequestQueue.queueBody[pushedIndex].lba = lba;
-  ATArequestQueue.queueBody[pushedIndex].SizeOfBytes = sizeOfBytes;
-  ATArequestQueue.queueBody[pushedIndex].buffer = buffer;
-  ATArequestQueue.queueBody[pushedIndex].IsComplete = 0;
+  struct ATARequestQueueEntry *entry = &(ATArequestQueue.queueBody[pushedIndex]);
+
+  entry->IsWrite = isWrite;
+  entry->lba = lba;
+  entry->SizeOfBytes = sizeOfBytes;
+  entry->buffer = buffer;
+  entry->IsComplete = 0;
+  entry->taskId = currentTaskId;
 
   return pushedIndex;
 }
@@ -197,13 +204,11 @@ int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, unsigned int si
 /**
  * @brief ATAリクエストキューの先頭を取得する
  */
-struct ATARequestQueueEntry* ATARequestQueueFront(){
+struct ATARequestQueueEntry *ATARequestQueueFront() {
   return &(ATArequestQueue.queueBody[ATArequestQueue.HeadIndex]);
 }
 
-char ATARequestComplete(int index){
-  return ATArequestQueue.queueBody[index].IsComplete;
-}
+char ATARequestComplete(int index) { return ATArequestQueue.queueBody[index].IsComplete; }
 
 /**
  * @brief ATAリクエストキューからポップする

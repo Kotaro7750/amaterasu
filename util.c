@@ -1,3 +1,7 @@
+/**
+ * @file util.c
+ * @brief 汎用的に使える関数群
+ */
 #include "include/util.h"
 
 // TODO return value
@@ -8,6 +12,15 @@ int strncmp(char *a, char *b, int length) {
     }
   }
   return 0;
+}
+
+int strnlength(char *a) {
+  int length = 0;
+  while (a[length] != 0) {
+    length++;
+  }
+
+  return length;
 }
 
 unsigned long long pow(unsigned long long x, unsigned long long n) {
