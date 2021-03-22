@@ -61,7 +61,7 @@ void HPETStartPeriodicTimer(unsigned long long us) {
   GCR_VALUE = gcr.raw;
 }
 
-void HPETHandler(unsigned long long currentRsp) {
+void HPETHandler() {
   Schedule();
 
   asm volatile (".global ScheduleRet");

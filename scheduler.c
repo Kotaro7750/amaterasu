@@ -115,6 +115,4 @@ void sleep() {
   SendEndOfInterrupt(HPET_INTERRUPT_NUM);
 }
 
-void wakeup(int taskId){
-  taskList[taskId].isValid = 1;
-}
+void wakeup(int taskId) { taskList[taskId].isValid = 1; }

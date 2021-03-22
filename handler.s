@@ -79,7 +79,6 @@ HPETHandlerASM:
   push    %rbp
   push    %rsi
   push    %rdi
-  mov     %rsp, %rdi
   call    HPETHandler
 HPETHandlerRet:
   pop     %rdi

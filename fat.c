@@ -84,7 +84,7 @@ int GetFileInfo(char *filename, struct File *file) {
 
   for (int i = 0; i < 512 / 32; i++) {
     if (buffer[32 * i] != 0x00) {
-      if (strncmp(filename, (char *)(buffer + 32 * i), strnlength(filename))) {
+      if (strncmp(filename, (char *)(buffer + 32 * i), strnlength(filename)) == 0) {
         unsigned short clusterHead = *(unsigned short *)(buffer + 32 * i + 26);
         unsigned int filesize = *(unsigned int *)(buffer + 32 * i + 28);
 

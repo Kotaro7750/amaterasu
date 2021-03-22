@@ -67,31 +67,6 @@ void taskC() {
   }
 }
 
-void taskD() {
-  while (1) {
-    putc('D');
-    volatile unsigned long long wait = 10000000;
-    while (wait--)
-      ;
-  }
-}
-
-void accessHigher() {
-  unsigned long long addr = 0xfffffffffffff000;
-  *(unsigned long long *)addr = 0xdeadbeaf;
-  puth(*(unsigned long long *)addr);
-  puts("\n");
-
-  addr = Syscall(SYSCALL_PHYSADDR, addr, 0, 0);
-  puth(addr);
-  puts("\n");
-
-  puth(*(unsigned long long *)addr);
-  puts("\n");
-
-  while (1) {
-  }
-}
 
 /**
  * @brief カーネルのスタートアップルーチン
@@ -119,10 +94,8 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
 
   EnableCPUInterrupt();
 
-  // Syscall(SYSCALL_EXEC, (unsigned long long)accessHigher, 0, 0);
   Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
-  Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
-  // Syscall(SYSCALL_EXEC, (unsigned long long)taskD, 0, 0);
+  // Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
 
   SchedulerStart();
 
@@ -130,7 +103,14 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
 
   struct File file;
   int ret = Syscall(SYSCALL_OPEN, "HOGE", (unsigned long long)&file, 0);
-  puth(ret);
+
+  unsigned char buffer[512];
+  ATARead(file.start, buffer);
+  for (int i = 0; i < file.size; i++) {
+    if (buffer[i] != 0) {
+      putc(buffer[i]);
+    }
+  }
 
   // unsigned long long addr1 = kmalloc(256 * 2);
   // DumpkHeap();

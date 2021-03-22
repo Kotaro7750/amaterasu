@@ -32,7 +32,8 @@ void execHandler(unsigned long long entryPoint) {
   --sp;
 
   /* push old RSP */
-  *sp = stackBase;
+  // *sp = stackBase;
+  *sp = 0xfffffffffffffff8;
   --sp;
 
   /* push RFLAGS */
@@ -57,7 +58,8 @@ void execHandler(unsigned long long entryPoint) {
   *sp = (unsigned long long)HPETHandlerRet;
   --sp;
 
-  *sp = stackBase;
+  //*sp = stackBase;
+  *sp = 0xfffffffffffffff8;
   unsigned long long IRQHandlerFrame = (unsigned long long)sp;
   --sp;
 
@@ -194,8 +196,6 @@ void execHandler(unsigned long long entryPoint) {
   }
 
   taskList[newTaskId].rsp = (unsigned long long)sp;
-  // taskList[newTaskId].rsp = (unsigned long long)rsp;
-  // taskList[newTaskId].rsp = (0xffffffffffffffff - (stackBase - (unsigned long long)sp));
 
   taskList[newTaskId].ring0stackBase = ring0stackBase;
 
