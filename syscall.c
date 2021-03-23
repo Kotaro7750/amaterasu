@@ -30,7 +30,7 @@ SyscallHandler(unsigned long long syscallId, unsigned long long arg1, unsigned l
 
   switch (syscallId) {
   case SYSCALL_READ:
-    ret = ATARead((unsigned int)arg1, (unsigned char *)arg2);
+    ret = ATARead((unsigned int)arg1,512, (unsigned char *)arg2);
     break;
   case SYSCALL_OPEN:
     ret = GetFileInfo((char *)arg1, (struct File *)arg2);

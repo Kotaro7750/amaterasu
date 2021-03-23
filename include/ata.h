@@ -30,7 +30,7 @@ struct ATADriveInfo {
 struct ATARequestQueueEntry {
   unsigned char IsWrite; // 0 for read, 1 for write
   unsigned int lba;
-  unsigned int SizeOfBytes;
+  int SizeOfBytes;
   unsigned char IsComplete;
   unsigned char *buffer;
   int taskId;
@@ -44,9 +44,10 @@ struct ATARequestQueue {
 
 void ATAInit();
 unsigned char ATAIdentify(enum ATABusSelector busSelector, enum ATADriveSelector driveSelector);
-int ATARead(unsigned int lba, unsigned char buffer[512]);
+int ATARead(unsigned int lba, int sizeOfBytes, unsigned char *buffer);
 
-int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, unsigned int sizeOfBytes, unsigned char *buffer);
+void ATASendRequest(int index);
+int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, int sizeOfBytes, unsigned char *buffer);
 struct ATARequestQueueEntry *ATARequestQueueFront();
 char ATARequestComplete(int index);
 void ATARequestQueuePop();

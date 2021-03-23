@@ -74,11 +74,7 @@ void ParseBootRecord(unsigned char BRsector[512], unsigned int startLBA) {
 
 int GetFileInfo(char *filename, struct File *file) {
   unsigned char buffer[512];
-  int pushedIndex = ATARead(partitions[0].rootDirStartLBA, buffer);
-
-  while (ATARequestComplete(pushedIndex) == 0) {
-    ;
-  }
+  ATARead(partitions[0].rootDirStartLBA,512, buffer);
 
   int length = strnlength(filename);
 

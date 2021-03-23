@@ -105,7 +105,7 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   int ret = Syscall(SYSCALL_OPEN, "HOGE", (unsigned long long)&file, 0);
 
   unsigned char buffer[512];
-  ATARead(file.start, buffer);
+  ATARead(file.start,file.size, buffer);
   for (int i = 0; i < file.size; i++) {
     if (buffer[i] != 0) {
       putc(buffer[i]);

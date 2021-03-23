@@ -63,30 +63,8 @@ void ATAInit() {
  * @brief 読み書き終了時の割り込みハンドラ
  */
 void ATAHandler() {
-  // TODO プライマリ決め打ちはよくない
-  unsigned short ioBase = ATA_IO_BASE_PRIMARY;
-
-  unsigned char isError = 0;
-  unsigned char status = InByte(ioBase + 7);
-  if (ATA_STATUS_REGISTER_ERR(status) || ATA_STATUS_REGISTER_DF(status)) {
-    isError = 1;
-  }
-
-  unsigned char buffer[512];
   struct ATARequestQueueEntry *request = ATARequestQueueFront();
-  if (isError) {
-    puts("ERROR\n");
-  } else {
-    for (int i = 0; i < 256; i++) {
-      unsigned short data = InShort(ioBase);
-      // maybe little endian
-      request->buffer[2 * i] = data & 0xff;
-      request->buffer[2 * i + 1] = (data >> 8) & 0xff;
-    }
-  }
 
-  request->IsComplete = 1;
-  ATARequestQueuePop();
   wakeup(request->taskId);
 
   SendEndOfInterrupt(ATA_INTERRUPT_NUM);
@@ -150,18 +128,73 @@ unsigned char ATAIdentify(enum ATABusSelector busSelector, enum ATADriveSelector
 }
 
 /**
- * @brief 1セクター分の読み取りリクエストを発行する
+ * @brief 読み取りリクエストを発行する
  */
-int ATARead(unsigned int lba, unsigned char buffer[512]) {
-  int pushedIndex = ATARequestQueuePush(0, lba, 512, buffer);
+int ATARead(unsigned int lba, int sizeOfBytes, unsigned char *buffer) {
+  int pushedIndex = ATARequestQueuePush(0, lba, sizeOfBytes, buffer);
   if (pushedIndex == -1) {
     return -1;
   }
 
   if (ATArequestQueue.Size == 1) {
-    int sectorCount = 1;
+    ATASendRequest(pushedIndex);
+  }
+
+  sleep();
+
+  // TODO プライマリ決め打ちはよくない
+  unsigned short ioBase = ATA_IO_BASE_PRIMARY;
+
+  unsigned char isError = 0;
+  unsigned char status = InByte(ioBase + 7);
+  if (ATA_STATUS_REGISTER_ERR(status) || ATA_STATUS_REGISTER_DF(status)) {
+    isError = 1;
+  }
+
+  struct ATARequestQueueEntry *request = ATARequestQueueFront();
+  if (isError) {
+    puts("ERROR\n");
+    return -1;
+  } else {
+    if (request->IsWrite == 0) {
+      for (int i = 0; i < (request->SizeOfBytes + 1) / 2; i++) {
+        unsigned short data = InShort(ioBase);
+        // maybe little endian
+        request->buffer[2 * i] = data & 0xff;
+
+        // when read size is odd, 2*i+1 should not be read
+        if (i != ((request->SizeOfBytes + 1) / 2 - 1) || request->SizeOfBytes % 2 == 0) {
+          request->buffer[2 * i + 1] = (data >> 8) & 0xff;
+        }
+      }
+    }
+  }
+
+  request->IsComplete = 1;
+  ATARequestQueuePop();
+
+  if (ATArequestQueue.Size >= 1) {
+    ATASendRequest(ATArequestQueue.HeadIndex);
+  }
+
+  return request->SizeOfBytes;
+}
+
+/**
+ * @brief ATAリクエストキューの内容に従って実際にリクエストを発行する
+ */
+void ATASendRequest(int index) {
+  struct ATARequestQueueEntry *request = &(ATArequestQueue.queueBody[index]);
+
+  if (request->IsWrite) {
+    puts("write is not supported\n");
+  } else {
+    int lba = request->lba;
+    int sectorCount = request->SizeOfBytes % 512 == 0 ? (request->SizeOfBytes / 512) : (request->SizeOfBytes / 512 + 1);
+
     unsigned short ioBase = ATA_IO_BASE_PRIMARY;
     unsigned short controlBase = ATA_CONTROL_BASE_PRIMARY;
+
     OutByte(ioBase + 6, 0xe0 | ((lba >> 24) & 0x0f));
     OutByte(controlBase, 0x0);
 
@@ -172,16 +205,13 @@ int ATARead(unsigned int lba, unsigned char buffer[512]) {
 
     OutByte(ioBase + 7, 0x20);
   }
-
-  sleep();
-  return pushedIndex;
 }
 
 /**
  * @brief ATAリクエストキューにプッシュする
- * @return プッシュされたインデックス
+ * @return プッシュされたインデックス．プッシュできないなかったなら-1を返す．
  */
-int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, unsigned int sizeOfBytes, unsigned char *buffer) {
+int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, int sizeOfBytes, unsigned char *buffer) {
   if (ATArequestQueue.Size == ATA_REQUEST_QUEUE_CAPACITY) {
     return -1;
   }
