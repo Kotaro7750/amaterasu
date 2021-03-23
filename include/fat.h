@@ -49,8 +49,8 @@ struct Partition {
 };
 
 extern struct Drive drives[4];
+extern struct Partition partitions[1];
 
 void DriveInit();
 void ParseBootRecord(unsigned char BRsector[512], unsigned int startLBA);
-int GetFileInfo(char *filename, struct File *file);
 #endif

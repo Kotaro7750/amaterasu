@@ -30,7 +30,7 @@ SyscallHandler(unsigned long long syscallId, unsigned long long arg1, unsigned l
 
   switch (syscallId) {
   case SYSCALL_READ:
-    ret = ATARead((unsigned int)arg1,512, (unsigned char *)arg2);
+    ret = ReadFile((struct File *)arg1, (unsigned char *)arg2);
     break;
   case SYSCALL_OPEN:
     ret = GetFileInfo((char *)arg1, (struct File *)arg2);
@@ -46,6 +46,9 @@ SyscallHandler(unsigned long long syscallId, unsigned long long arg1, unsigned l
     break;
   case SYSCALL_PHYSADDR:
     ret = CalcPhyAddr(arg1);
+    break;
+  case SYSCALL_ATA_READ:
+    ret = ATARead((unsigned int)arg1, (int)arg2, (unsigned char *)arg3);
     break;
   }
 

@@ -5,8 +5,8 @@
 #include "include/fat.h"
 #include "include/ata.h"
 #include "include/file.h"
-#include "include/pic.h"
 #include "include/graphic.h"
+#include "include/pic.h"
 #include "include/scheduler.h"
 #include "include/syscall.h"
 #include "include/util.h"
@@ -18,11 +18,7 @@ void DriveInit() {
   for (int i = 0; i < 4; i++) {
     if (drives[i].isValid) {
       unsigned char buffer[512];
-      int pushedIndex = Syscall(SYSCALL_READ, 0, (unsigned long long)buffer, 0);
-
-      while (ATARequestComplete(pushedIndex) == 0) {
-        ;
-      }
+      Syscall(SYSCALL_ATA_READ, 0, 512, (unsigned long long)buffer);
 
       drives[i].MBR.id = *(unsigned int *)(buffer + 0x1b8);
       for (int partition = 0; partition < 4; partition++) {
@@ -37,11 +33,7 @@ void DriveInit() {
   }
 
   unsigned char buffer[512];
-  int pushedIndex = Syscall(SYSCALL_READ, drives[0].MBR.partitionTables[0].startLBA, (unsigned long long)buffer, 0);
-
-  while (ATARequestComplete(pushedIndex) == 0) {
-    ;
-  }
+  Syscall(SYSCALL_ATA_READ, drives[0].MBR.partitionTables[0].startLBA, 512, (unsigned long long)buffer);
 
   ParseBootRecord(buffer, drives[0].MBR.partitionTables[0].startLBA);
 }
@@ -70,27 +62,4 @@ void ParseBootRecord(unsigned char BRsector[512], unsigned int startLBA) {
   partitions[0].rootDirStartLBA = partitions[0].dataStartLBA - partitions[0].sectorsOfRootDir;
 
   partitions[0].numbersOfSectors = *(unsigned int *)(BRsector + 0x20);
-}
-
-int GetFileInfo(char *filename, struct File *file) {
-  unsigned char buffer[512];
-  ATARead(partitions[0].rootDirStartLBA,512, buffer);
-
-  int length = strnlength(filename);
-
-  for (int i = 0; i < 512 / 32; i++) {
-    if (buffer[32 * i] != 0x00) {
-      if (strncmp(filename, (char *)(buffer + 32 * i), strnlength(filename)) == 0) {
-        unsigned short clusterHead = *(unsigned short *)(buffer + 32 * i + 26);
-        unsigned int filesize = *(unsigned int *)(buffer + 32 * i + 28);
-
-        file->start = partitions[0].dataStartLBA + partitions[0].sectorsOfCluster * (clusterHead - 2);
-        file->size = filesize;
-
-        return 1;
-      }
-    }
-  }
-
-  return 0;
 }
