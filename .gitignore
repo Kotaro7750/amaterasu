@@ -1,6 +1,7 @@
 *.o
 *.bin
 *.elf
+*.app
 *.map
 /fs/*
 !/fs/EFI

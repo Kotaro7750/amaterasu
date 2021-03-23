@@ -1,7 +1,7 @@
 CFLAGS = -Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-common -g
 LDFLAGS = -Map app.map -s -T app.ld -x --nmagic
 LIB = ../lib/lib.o
-TARGET = test
+TARGET = test.app
 
 SRC = $(wildcard *.c)
 OBJ = $(SRC:%.c=%.o)
