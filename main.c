@@ -67,7 +67,6 @@ void taskC() {
   }
 }
 
-
 /**
  * @brief カーネルのスタートアップルーチン
  * @param[in] _t 未使用
@@ -102,15 +101,7 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   DriveInit();
 
   struct File file;
-  int ret = Syscall(SYSCALL_OPEN, "HOGE", (unsigned long long)&file, 0);
-
-  unsigned char buffer[512];
-  Syscall(SYSCALL_READ, (unsigned long long)&file, (unsigned long long)buffer, 0);
-  for (int i = 0; i < file.size; i++) {
-    if (buffer[i] != 0) {
-      putc(buffer[i]);
-    }
-  }
+  int ret = Syscall(SYSCALL_EXEC2, "TEST", 0, 0);
 
   // unsigned long long addr1 = kmalloc(256 * 2);
   // DumpkHeap();

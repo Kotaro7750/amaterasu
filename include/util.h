@@ -5,4 +5,5 @@ int strncmp(char *a, char *b, int length);
 int strnlength(char *a);
 unsigned long long pow(unsigned long long x, unsigned long long n);
 unsigned long long log2(unsigned long long x);
+void memcpy(void *dst, void *src, unsigned long long size);
 #endif

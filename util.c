@@ -43,3 +43,9 @@ unsigned long long log2(unsigned long long x) {
   }
   return ret;
 }
+
+void memcpy(void *dst, void *src, unsigned long long size) {
+  for (unsigned long long i = 0; i < size; i++) {
+    *((char *)dst + i) = *(char *)(src + i);
+  }
+}

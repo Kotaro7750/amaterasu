@@ -4,5 +4,10 @@
  */
 #include "../lib/include/syscall.h"
 void entry() {
-  Syscall(SYSCALL_PUT, 'C', 0, 0);
+  while (1) {
+    Syscall(SYSCALL_PUT, 'Z', 0, 0);
+    volatile unsigned long long wait = 10000000;
+    while (wait--)
+      ;
+  }
 }

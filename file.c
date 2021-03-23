@@ -8,6 +8,7 @@
 #include "include/util.h"
 
 int GetFileInfo(char *filename, struct File *file) {
+  // TODO ディレクトリエントリが複数のセクタにまたがるときの対応
   unsigned char buffer[512];
   ATARead(partitions[0].rootDirStartLBA, 512, buffer);
 
