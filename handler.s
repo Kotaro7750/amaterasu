@@ -66,5 +66,11 @@ HPETHandlerRet:
 SyscallHandlerASM:
   SAVE_ALL_REGISTERS
   call    SyscallHandler
-  POP_ALL_REGISTERS
+  pop     %rdi
+  pop     %rsi
+  pop     %rbp
+  pop     %rbx
+  pop     %rdx
+  pop     %rcx
+  pop     %rax
   iretq
