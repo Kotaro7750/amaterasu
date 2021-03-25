@@ -14,7 +14,6 @@ enum SYSCALL_NUM {
   SYSCALL_EXEC = 59,
   SYSCALL_EXIT = 60,
   SYSCALL_ATA_READ = 61,
-  SYSCALL_EXEC2 = 62,
 };
 
 void SyscallInit();

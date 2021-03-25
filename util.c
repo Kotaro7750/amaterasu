@@ -49,3 +49,9 @@ void memcpy(void *dst, void *src, unsigned long long size) {
     *((char *)dst + i) = *(char *)(src + i);
   }
 }
+
+void memset(void *addr, char value, unsigned long long size) {
+  for (unsigned long long i = 0; i < size; i++) {
+    *(char *)(addr + i) = value;
+  }
+}

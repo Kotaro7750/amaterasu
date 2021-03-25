@@ -16,6 +16,7 @@
 #include "include/paging.h"
 #include "include/physicalMemory.h"
 #include "include/pic.h"
+#include "include/process.h"
 #include "include/scheduler.h"
 #include "include/syscall.h"
 #include "include/x86_64.h"
@@ -48,7 +49,7 @@ void taskA() {
  */
 void taskB() {
   while (1) {
-    putc('B');
+    Syscall(SYSCALL_PUT, 'B', 0, 0);
     volatile unsigned long long wait = 10000000;
     while (wait--)
       ;
@@ -93,15 +94,16 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
 
   EnableCPUInterrupt();
 
-  Syscall(SYSCALL_EXEC, (unsigned long long)taskB, 0, 0);
-  // Syscall(SYSCALL_EXEC, (unsigned long long)taskC, 0, 0);
+  KernelThread((unsigned long long)taskB);
+  KernelThread((unsigned long long)taskC);
 
   SchedulerStart();
 
   DriveInit();
 
   struct File file;
-  int ret = Syscall(SYSCALL_EXEC2, "TEST", 0, 0);
+  int ret = Syscall(SYSCALL_EXEC, "TEST", 0, 0);
+  KernelThread((unsigned long long)taskA);
 
   // unsigned long long addr1 = kmalloc(256 * 2);
   // DumpkHeap();

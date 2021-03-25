@@ -66,6 +66,29 @@
  */
 #define SS_SEGMENT_SELECTOR_USER 35
 
+struct Registers {
+  unsigned long long rax;
+  unsigned long long rbx;
+  unsigned long long rcx;
+  unsigned long long rdx;
+  unsigned long long rsp;
+  unsigned long long rbp;
+  unsigned long long rsi;
+  unsigned long long rdi;
+  unsigned long long r8;
+  unsigned long long r9;
+  unsigned long long r10;
+  unsigned long long r11;
+  unsigned long long r12;
+  unsigned long long r13;
+  unsigned long long r14;
+  unsigned long long r15;
+  unsigned long long rip;
+  unsigned short cs;
+  unsigned short ds;
+  unsigned long long rflags;
+};
+
 extern unsigned long long gdt[7];
 extern unsigned long long gdtr[2];
 extern unsigned int tss[25];

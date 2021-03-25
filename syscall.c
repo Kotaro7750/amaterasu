@@ -42,16 +42,13 @@ SyscallHandler(unsigned long long syscallId, unsigned long long arg1, unsigned l
     ret = CalcPhyAddr(arg1);
     break;
   case SYSCALL_EXEC:
-    execHandler(arg1);
+    execHandler((char *)arg1);
     break;
   case SYSCALL_EXIT:
     exitHandler(arg1);
     break;
   case SYSCALL_ATA_READ:
     ret = ATARead((unsigned int)arg1, (int)arg2, (unsigned char *)arg3);
-    break;
-  case SYSCALL_EXEC2:
-    execHandler2((char *)arg1);
     break;
   }
 
