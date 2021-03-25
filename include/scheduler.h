@@ -4,7 +4,7 @@
  */
 #ifndef _SCHEDULER_H_
 #define _SCHEDULER_H_
-#include "hpet.h"
+#include <hpet.h>
 
 #define SCHEDULER_PERIOD (5 * MS_TO_US)
 #define TASK_MAX_NUMBER 4

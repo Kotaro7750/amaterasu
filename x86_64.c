@@ -2,9 +2,9 @@
  * @file x86_64.c
  * @brief x86_64アーキテクチャ固有の処理
  */
-#include "include/x86_64.h"
-#include "include/graphic.h"
-#include "include/physicalMemory.h"
+#include <x86_64.h>
+#include <graphic.h>
+#include <physicalMemory.h>
 
 unsigned char
 CALC_ACCESS_BYTE(unsigned char Pr, unsigned char Priv, unsigned char S, unsigned char Ex, unsigned char DC, unsigned char RW, unsigned char Ac) {

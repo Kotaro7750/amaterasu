@@ -1,8 +1,8 @@
-#include "include/kbc.h"
-#include "include/graphic.h"
-#include "include/interrupt.h"
-#include "include/pic.h"
-#include "include/x86_64.h"
+#include <kbc.h>
+#include <graphic.h>
+#include <interrupt.h>
+#include <pic.h>
+#include <x86_64.h>
 
 const unsigned char scanCode[] = {0x00,     ASCII_ESC, '1', '2', '3', '4', '5', '6', '7', '8',  '9',  '0',  '-',  '=',  ASCII_BS,
                                   ASCII_HT, 'q',       'w', 'e', 'r', 't', 'y', 'u', 'i', 'o',  'p',  '[',  ']',  '\n', 0x00,

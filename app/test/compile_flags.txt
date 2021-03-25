@@ -1,0 +1,9 @@
+-Wall
+-Wextra
+-nostdinc
+-nostdlib
+-fno-builtin
+-fno-common
+-g
+-I
+../lib/include

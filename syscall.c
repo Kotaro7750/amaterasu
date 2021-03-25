@@ -2,15 +2,15 @@
  * @file syscall.c
  * @brief システムコール処理
  */
-#include "include/syscall.h"
-#include "include/ata.h"
-#include "include/fat.h"
-#include "include/file.h"
-#include "include/graphic.h"
-#include "include/interrupt.h"
-#include "include/paging.h"
-#include "include/pic.h"
-#include "include/process.h"
+#include <syscall.h>
+#include <ata.h>
+#include <fat.h>
+#include <file.h>
+#include <graphic.h>
+#include <interrupt.h>
+#include <paging.h>
+#include <pic.h>
+#include <process.h>
 
 void SyscallHandlerASM(void);
 

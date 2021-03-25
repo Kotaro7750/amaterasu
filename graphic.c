@@ -1,6 +1,6 @@
-#include "include/graphic.h"
-#include "include/fb.h"
-#include "include/font.h"
+#include <graphic.h>
+#include <fb.h>
+#include <font.h>
 
 unsigned int cursorX;
 unsigned int cursorY;

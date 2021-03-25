@@ -2,10 +2,10 @@
  * @file file.c
  * @brief ファイルの処理
  */
-#include "include/file.h"
-#include "include/ata.h"
-#include "include/fat.h"
-#include "include/util.h"
+#include <file.h>
+#include <ata.h>
+#include <fat.h>
+#include <util.h>
 
 int GetFileInfo(char *filename, struct File *file) {
   // TODO ディレクトリエントリが複数のセクタにまたがるときの対応

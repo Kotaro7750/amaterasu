@@ -2,13 +2,13 @@
  * @file ata.c
  * @brief ATAのドライバ処理
  */
-#include "include/ata.h"
-#include "include/fat.h"
-#include "include/graphic.h"
-#include "include/interrupt.h"
-#include "include/pic.h"
-#include "include/scheduler.h"
-#include "include/x86_64.h"
+#include <ata.h>
+#include <fat.h>
+#include <graphic.h>
+#include <interrupt.h>
+#include <pic.h>
+#include <scheduler.h>
+#include <x86_64.h>
 
 /**
  * @brief ATAへの読み書きリクエストの待ち行列

@@ -1,4 +1,4 @@
-#include "include/fb.h"
+#include <fb.h>
 
 struct FrameBuffer fb;
 

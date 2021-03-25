@@ -2,17 +2,17 @@
  * @file process.c
  * @brief プロセスの生成，削除に関連する処理
  */
-#include "include/process.h"
-#include "include/elf.h"
-#include "include/file.h"
-#include "include/graphic.h"
-#include "include/hpet.h"
-#include "include/kHeap.h"
-#include "include/paging.h"
-#include "include/physicalMemory.h"
-#include "include/scheduler.h"
-#include "include/util.h"
-#include "include/x86_64.h"
+#include <process.h>
+#include <elf.h>
+#include <file.h>
+#include <graphic.h>
+#include <hpet.h>
+#include <kHeap.h>
+#include <paging.h>
+#include <physicalMemory.h>
+#include <scheduler.h>
+#include <util.h>
+#include <x86_64.h>
 
 /**
  * @brief 新しいプロセスを従来プロセスと同等に扱うために，タイマー割り込みによって中断した時点でのスタックを再現する

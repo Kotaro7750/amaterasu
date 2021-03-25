@@ -1,9 +1,9 @@
-#include "include/hpet.h"
-#include "include/acpi.h"
-#include "include/graphic.h"
-#include "include/interrupt.h"
-#include "include/pic.h"
-#include "include/scheduler.h"
+#include <hpet.h>
+#include <acpi.h>
+#include <graphic.h>
+#include <interrupt.h>
+#include <pic.h>
+#include <scheduler.h>
 
 unsigned long long HPETBaseAddress;
 unsigned long long HPETCLKPeriod;

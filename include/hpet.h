@@ -1,6 +1,6 @@
 #ifndef _HPET_H_
 #define _HPET_H_
-#include "acpi.h"
+#include <acpi.h>
 
 #define US_TO_FS 1000000000
 #define MS_TO_US 1000

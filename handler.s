@@ -1,3 +1,23 @@
+.macro SAVE_ALL_REGISTERS
+  push    %rax
+  push    %rcx
+  push    %rdx
+  push    %rbx
+  push    %rbp
+  push    %rsi
+  push    %rdi
+.endm
+
+.macro POP_ALL_REGISTERS
+  pop     %rdi
+  pop     %rsi
+  pop     %rbp
+  pop     %rbx
+  pop     %rdx
+  pop     %rcx
+  pop     %rax
+.endm
+
   .global DefaultHandler
 DefaultHandler:
   jmp     DefaultHandler
@@ -14,97 +34,37 @@ GeneralProtectionFaultHandlerASM:
 
   .global PageFaultHandlerASM
 PageFaultHandlerASM:
-  push    %rax
-  push    %rcx
-  push    %rdx
-  push    %rbx
-  push    %rbp
-  push    %rsi
-  push    %rdi
+  SAVE_ALL_REGISTERS
   call    PageFaultHandler
-  pop     %rdi
-  pop     %rsi
-  pop     %rbp
-  pop     %rbx
-  pop     %rdx
-  pop     %rcx
-  pop     %rax
+  POP_ALL_REGISTERS
   iretq
 
   .global KBCHandler
 KBCHandler:
-  push    %rax
-  push    %rcx
-  push    %rdx
-  push    %rbx
-  push    %rbp
-  push    %rsi
-  push    %rdi
+  SAVE_ALL_REGISTERS
   call    doKBCInterrupt
-  pop     %rdi
-  pop     %rsi
-  pop     %rbp
-  pop     %rbx
-  pop     %rdx
-  pop     %rcx
-  pop     %rax
+  POP_ALL_REGISTERS
   iretq
 
   .global ATAHandlerASM
 ATAHandlerASM:
-  push    %rax
-  push    %rcx
-  push    %rdx
-  push    %rbx
-  push    %rbp
-  push    %rsi
-  push    %rdi
+  SAVE_ALL_REGISTERS
   call    ATAHandler
-  pop     %rdi
-  pop     %rsi
-  pop     %rbp
-  pop     %rbx
-  pop     %rdx
-  pop     %rcx
-  pop     %rax
+  POP_ALL_REGISTERS
   iretq
 
   .global HPETHandlerASM
   .global HPETHandlerRet
 HPETHandlerASM:
-  push    %rax
-  push    %rcx
-  push    %rdx
-  push    %rbx
-  push    %rbp
-  push    %rsi
-  push    %rdi
+  SAVE_ALL_REGISTERS
   call    HPETHandler
 HPETHandlerRet:
-  pop     %rdi
-  pop     %rsi
-  pop     %rbp
-  pop     %rbx
-  pop     %rdx
-  pop     %rcx
-  pop     %rax
+  POP_ALL_REGISTERS
   iretq
 
   .global SyscallHandlerASM
 SyscallHandlerASM:
-  push    %rcx
-  push    %rax
-  push    %rdx
-  push    %rbx
-  push    %rbp
-  push    %rsi
-  push    %rdi
+  SAVE_ALL_REGISTERS
   call    SyscallHandler
-  pop     %rdi
-  pop     %rsi
-  pop     %rbp
-  pop     %rbx
-  pop     %rdx
-  pop     %rcx
-  pop     %rcx
+  POP_ALL_REGISTERS
   iretq

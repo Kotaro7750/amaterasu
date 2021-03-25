@@ -2,7 +2,7 @@
  * @file test.c
  * @brief アプリ分離のテスト用
  */
-#include "../lib/include/syscall.h"
+#include <syscall.h>
 void entry() {
   while (1) {
     Syscall(SYSCALL_PUT, 'Z', 0, 0);

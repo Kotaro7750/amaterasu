@@ -1,8 +1,8 @@
-#include "include/paging.h"
-#include "include/physicalMemory.h"
-#include "include/graphic.h"
-#include "include/interrupt.h"
-#include "include/x86_64.h"
+#include <paging.h>
+#include <physicalMemory.h>
+#include <graphic.h>
+#include <interrupt.h>
+#include <x86_64.h>
 
 void PageFaultHandlerASM(void);
 

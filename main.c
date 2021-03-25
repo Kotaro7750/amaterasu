@@ -3,23 +3,23 @@
  * @brief カーネルのメイン処理
  */
 
-#include "include/acpi.h"
-#include "include/ata.h"
-#include "include/fat.h"
-#include "include/fb.h"
-#include "include/file.h"
-#include "include/graphic.h"
-#include "include/hpet.h"
-#include "include/interrupt.h"
-#include "include/kHeap.h"
-#include "include/kbc.h"
-#include "include/paging.h"
-#include "include/physicalMemory.h"
-#include "include/pic.h"
-#include "include/process.h"
-#include "include/scheduler.h"
-#include "include/syscall.h"
-#include "include/x86_64.h"
+#include <acpi.h>
+#include <ata.h>
+#include <fat.h>
+#include <fb.h>
+#include <file.h>
+#include <graphic.h>
+#include <hpet.h>
+#include <interrupt.h>
+#include <kHeap.h>
+#include <kbc.h>
+#include <paging.h>
+#include <physicalMemory.h>
+#include <pic.h>
+#include <process.h>
+#include <scheduler.h>
+#include <syscall.h>
+#include <x86_64.h>
 
 /**
  * @struct PlatformInfo

@@ -1,6 +1,6 @@
-#include "include/acpi.h"
-#include "include/graphic.h"
-#include "include/util.h"
+#include <acpi.h>
+#include <graphic.h>
+#include <util.h>
 
 struct XSDT *xsdt;
 

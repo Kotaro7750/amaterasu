@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-common -g
+CFLAGS = -Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-common -g -I ../lib/include
 LDFLAGS = -Map app.map -s -T app.ld -x --nmagic
 LIB = ../lib/lib.o
 TARGET = test.app

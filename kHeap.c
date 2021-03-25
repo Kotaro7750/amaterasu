@@ -2,10 +2,10 @@
  * @file kHeap.c
  * @brief カーネルヒープ処理
  */
-#include "include/kHeap.h"
-#include "include/graphic.h"
-#include "include/physicalMemory.h"
-#include "include/util.h"
+#include <kHeap.h>
+#include <graphic.h>
+#include <physicalMemory.h>
+#include <util.h>
 
 //! カーネルヒープ領域の先頭
 unsigned long long kHeapStart;

@@ -1,6 +1,6 @@
-#include "include/physicalMemory.h"
-#include "include/graphic.h"
-#include "include/util.h"
+#include <physicalMemory.h>
+#include <graphic.h>
+#include <util.h>
 
 struct PhysicalMemoryFreeMapInfo physicalMemoryFreeMapInfo;
 

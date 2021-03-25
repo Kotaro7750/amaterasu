@@ -3,10 +3,10 @@
  * @brief 割り込み関連の処理
  */
 
-#include "include/interrupt.h"
-#include "include/graphic.h"
-#include "include/x86_64.h"
-#include "include/syscall.h"
+#include <interrupt.h>
+#include <graphic.h>
+#include <x86_64.h>
+#include <syscall.h>
 
 /**
  * @brief IDTの実体

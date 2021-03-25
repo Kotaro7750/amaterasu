@@ -2,14 +2,14 @@
  * @file fat.c
  * @brief FATファイルシステムの処理
  */
-#include "include/fat.h"
-#include "include/ata.h"
-#include "include/file.h"
-#include "include/graphic.h"
-#include "include/pic.h"
-#include "include/scheduler.h"
-#include "include/syscall.h"
-#include "include/util.h"
+#include <fat.h>
+#include <ata.h>
+#include <file.h>
+#include <graphic.h>
+#include <pic.h>
+#include <scheduler.h>
+#include <syscall.h>
+#include <util.h>
 
 struct Drive drives[4];
 struct Partition partitions[1];

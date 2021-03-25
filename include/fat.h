@@ -6,7 +6,7 @@
 #ifndef _FAT_H_
 #define _FAT_H_
 
-#include "file.h"
+#include <file.h>
 
 /**
  * @brief MBRのパーティションテーブルエントリ

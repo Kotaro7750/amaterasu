@@ -1,5 +1,5 @@
-#include "include/pic.h"
-#include "include/x86_64.h"
+#include <pic.h>
+#include <x86_64.h>
 
 void picInit(void) {
   // ICW1, use ICW4, enable cascade, edge trigger

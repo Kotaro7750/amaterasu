@@ -1,6 +1,6 @@
 #ifndef _GRAPHIC_H_
 #define _GRAPHIC_H_
-#include "fb.h"
+#include <fb.h>
 
 #define UNUM64_STR_LEN 16
 

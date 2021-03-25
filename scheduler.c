@@ -2,14 +2,14 @@
  * @file scheduler.c
  * @brief タスクのスケジューリング関連の処理
  */
-#include "include/scheduler.h"
-#include "include/graphic.h"
-#include "include/hpet.h"
-#include "include/interrupt.h"
-#include "include/physicalMemory.h"
-#include "include/pic.h"
-#include "include/syscall.h"
-#include "include/x86_64.h"
+#include <scheduler.h>
+#include <graphic.h>
+#include <hpet.h>
+#include <interrupt.h>
+#include <physicalMemory.h>
+#include <pic.h>
+#include <syscall.h>
+#include <x86_64.h>
 
 //! スケジューリング対象のタスク
 struct TaskListEntry taskList[TASK_MAX_NUMBER];

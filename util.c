@@ -2,7 +2,7 @@
  * @file util.c
  * @brief 汎用的に使える関数群
  */
-#include "include/util.h"
+#include <util.h>
 
 // TODO return value
 int strncmp(char *a, char *b, int length) {

@@ -2,7 +2,7 @@ TARGET = kernel.elf
 TARGET_DEBUG = kernel.elf.debug
 BOOTLOADER = fs/EFI/BOOT/BOOTX64.EFI
 
-CFLAGS = -Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-common -g
+CFLAGS = -Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-common -g -I include
 LDFLAGS = -Map kernel.map -s -x -T kernel.ld --nmagic
 LDFLAGS_DEBUG = -Map kernel.map -x -T kernel.ld --nmagic
 
