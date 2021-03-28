@@ -16,6 +16,8 @@
 
 #define ATA_REQUEST_QUEUE_CAPACITY 10
 
+#include <process.h>
+
 enum ATABusSelector { ATABusPrimary, ATABusSecondary };
 enum ATADriveSelector { ATADriveMaster, ATADriveSlave };
 
@@ -33,7 +35,7 @@ struct ATARequestQueueEntry {
   int SizeOfBytes;
   unsigned char IsComplete;
   unsigned char *buffer;
-  int taskId;
+  struct Process *process;
 };
 
 struct ATARequestQueue {
@@ -44,7 +46,7 @@ struct ATARequestQueue {
 
 void ATAInit();
 unsigned char ATAIdentify(enum ATABusSelector busSelector, enum ATADriveSelector driveSelector);
-int ATARead(unsigned int lba, int sizeOfBytes, unsigned char *buffer);
+int ATARead(unsigned int lba, int sizeOfBytes, unsigned char *buffer, char enablePoll);
 
 void ATASendRequest(int index);
 int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, int sizeOfBytes, unsigned char *buffer);

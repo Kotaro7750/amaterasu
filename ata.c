@@ -2,6 +2,7 @@
  * @file ata.c
  * @brief ATAのドライバ処理
  */
+#include "process.h"
 #include <ata.h>
 #include <fat.h>
 #include <graphic.h>
@@ -16,6 +17,20 @@
 struct ATARequestQueue ATArequestQueue;
 
 void ATAHandlerASM();
+
+char ATAPollingUntilReady(ioBase) {
+  unsigned char status = InByte(ioBase + 7);
+  while ((ATA_STATUS_REGISTER_BSY(status) != 0 || ATA_STATUS_REGISTER_DRQ(status) == 0) &&
+         (ATA_STATUS_REGISTER_ERR(status) == 0 && ATA_STATUS_REGISTER_DF(status) == 0)) {
+    status = InByte(ioBase + 7);
+  }
+
+  if (ATA_STATUS_REGISTER_ERR(status) == 1 || ATA_STATUS_REGISTER_DF(status) == 1) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
 
 /**
  * @brief ディスク一覧の初期化，割り込みハンドラ登録
@@ -56,7 +71,7 @@ void ATAInit() {
   void *handler;
   asm volatile("lea ATAHandlerASM, %[handler]" : [ handler ] "=r"(handler));
   SetInterruptDescriptor(ATA_INTERRUPT_NUM, handler, 1);
-  EnableInterruptOnPIC(ATA_INTERRUPT_NUM);
+  // EnableInterruptOnPIC(ATA_INTERRUPT_NUM);
 }
 
 /**
@@ -65,7 +80,7 @@ void ATAInit() {
 void ATAHandler() {
   struct ATARequestQueueEntry *request = ATARequestQueueFront();
 
-  wakeup(request->taskId);
+  wakeup(request->process);
 
   SendEndOfInterrupt(ATA_INTERRUPT_NUM);
 }
@@ -130,7 +145,7 @@ unsigned char ATAIdentify(enum ATABusSelector busSelector, enum ATADriveSelector
 /**
  * @brief 読み取りリクエストを発行する
  */
-int ATARead(unsigned int lba, int sizeOfBytes, unsigned char *buffer) {
+int ATARead(unsigned int lba, int sizeOfBytes, unsigned char *buffer, char enablePoll) {
   int pushedIndex = ATARequestQueuePush(0, lba, sizeOfBytes, buffer);
   if (pushedIndex == -1) {
     return -1;
@@ -140,7 +155,11 @@ int ATARead(unsigned int lba, int sizeOfBytes, unsigned char *buffer) {
     ATASendRequest(pushedIndex);
   }
 
-  sleep();
+  if (enablePoll) {
+    ATAPollingUntilReady(ATA_IO_BASE_PRIMARY);
+  } else {
+    sleep();
+  }
 
   // TODO プライマリ決め打ちはよくない
   unsigned short ioBase = ATA_IO_BASE_PRIMARY;
@@ -226,7 +245,7 @@ int ATARequestQueuePush(unsigned char isWrite, unsigned int lba, int sizeOfBytes
   entry->SizeOfBytes = sizeOfBytes;
   entry->buffer = buffer;
   entry->IsComplete = 0;
-  entry->taskId = currentTaskId;
+  entry->process = currentProcess;
 
   return pushedIndex;
 }

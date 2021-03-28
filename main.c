@@ -13,6 +13,7 @@
 #include <interrupt.h>
 #include <kHeap.h>
 #include <kbc.h>
+#include <list.h>
 #include <paging.h>
 #include <physicalMemory.h>
 #include <pic.h>
@@ -78,7 +79,9 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   FBInit(&(_pi->fb));
   GraphicInit();
   PhysicalMemoryManagementInit(*freeMapInfo);
+  kHeapInit();
   gdtInit();
+  ProcessInit();
 
   idtInit();
   picInit();
@@ -89,37 +92,14 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   ATAInit();
 
   PagingInit();
-  kHeapInit();
-  SchedulerInit();
 
   EnableCPUInterrupt();
 
-  KernelThread((unsigned long long)taskB);
+  DriveInit();
   KernelThread((unsigned long long)taskC);
-
   SchedulerStart();
 
-  DriveInit();
-
-  struct File file;
-  int ret = Syscall(SYSCALL_EXEC, "TEST", 0, 0);
-  KernelThread((unsigned long long)taskA);
-
-  // unsigned long long addr1 = kmalloc(256 * 2);
-  // DumpkHeap();
-  // puts("\n");
-
-  // unsigned long long addr2 = kmalloc(256);
-  // DumpkHeap();
-  // puts("\n");
-
-  // kfree(addr1);
-  // DumpkHeap();
-  // puts("\n");
-
-  // kfree(addr1);
-  // DumpkHeap();
-  // puts("\n");
+  Syscall(SYSCALL_EXEC, "TEST", 0, 0);
 
   while (1)
     CpuHalt();

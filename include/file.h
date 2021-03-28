@@ -6,6 +6,6 @@ struct File {
   unsigned long long size;
 };
 
-int GetFileInfo(char *filename, struct File *file);
-int ReadFile(struct File *file, unsigned char *buffer);
+int GetFileInfo(char *filename, struct File *file, char enablePoll);
+int ReadFile(struct File *file, unsigned char *buffer, char enablePoll);
 #endif

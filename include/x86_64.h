@@ -71,7 +71,6 @@ struct Registers {
   unsigned long long rbx;
   unsigned long long rcx;
   unsigned long long rdx;
-  unsigned long long rsp;
   unsigned long long rbp;
   unsigned long long rsi;
   unsigned long long rdi;
@@ -84,9 +83,13 @@ struct Registers {
   unsigned long long r14;
   unsigned long long r15;
   unsigned long long rip;
-  unsigned short cs;
-  unsigned short ds;
+  unsigned long long cs;
   unsigned long long rflags;
+  unsigned long long rsp;
+  unsigned long long ss;
+  unsigned long long ds;
+  unsigned long long cr3;
+  unsigned long long ring0rsp;
 };
 
 extern unsigned long long gdt[7];

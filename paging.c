@@ -1,7 +1,8 @@
-#include <paging.h>
-#include <physicalMemory.h>
 #include <graphic.h>
 #include <interrupt.h>
+#include <paging.h>
+#include <physicalMemory.h>
+#include <process.h>
 #include <x86_64.h>
 
 void PageFaultHandlerASM(void);
@@ -11,51 +12,7 @@ void PagingInit(void) {
   asm volatile("lea PageFaultHandlerASM, %[handler]" : [ handler ] "=r"(handler));
   SetInterruptDescriptor(PAGE_FAULT_EXCP_NUM, handler, 1);
 
-  // enable 0~5GB-1
-  struct L3PTEntry1GB *l3ptBase = (struct L3PTEntry1GB *)AllocatePageFrames(1);
-  for (int i = 0; i < 512; i++) {
-    if (i < 5) {
-      l3ptBase[i].Present = 1;
-      l3ptBase[i].ReadWrite = 1;
-      l3ptBase[i].UserSupervisor = 0;
-      l3ptBase[i].PageWriteThrough = 0;
-      l3ptBase[i].PageCacheDisable = 0;
-      l3ptBase[i].Accessed = 0;
-      l3ptBase[i].Dirty = 0;
-      l3ptBase[i].PageSize = 1;
-      l3ptBase[i].Global = 0;
-      l3ptBase[i]._ignored = 0;
-      l3ptBase[i].PAT = 0;
-      l3ptBase[i].Reserved = 0;
-      l3ptBase[i].PageFramePhysAddr = ((unsigned long long)((unsigned long long)i * 0x40000000) >> 30);
-      l3ptBase[i]._ignored3 = 0;
-      l3ptBase[i].ProtectionKey = 0;
-      l3ptBase[i].ExecuteDisable = 0;
-    } else {
-      l3ptBase[i].Present = 0;
-    }
-  }
-  struct L4PTEntry *l4ptBase = (struct L4PTEntry *)AllocatePageFrames(1);
-  for (int i = 0; i < 512; i++) {
-    if (i == 0) {
-      l4ptBase[i].Present = 1;
-      l4ptBase[i].ReadWrite = 1;
-      l4ptBase[i].UserSupervisor = 0;
-      l4ptBase[i].PageWriteThrough = 0;
-      l4ptBase[i].PageCacheDisable = 0;
-      l4ptBase[i].Accessed = 0;
-      l4ptBase[i]._ignored1 = 0;
-      l4ptBase[i].PageSize = 0;
-      l4ptBase[i]._ignored2 = 0;
-      l4ptBase[i].L3PTPhysAddr = ((unsigned long long)(l3ptBase) >> 12);
-      l4ptBase[i]._ignored3 = 0;
-      l4ptBase[i].ExecuteDisable = 0;
-    } else {
-      l4ptBase[i].Present = 0;
-    }
-  }
-
-  asm volatile("mov %[value], %%cr3" ::[value] "r"(l4ptBase));
+  asm volatile("mov %[value], %%cr3" ::[value] "r"(currentProcess->processMemory->l4PageTableBase));
 }
 
 void PageFaultHandler(void) {
@@ -98,7 +55,7 @@ void CausePageFoult(void) {
   *invalidAddr = 42;
 }
 
-unsigned long long CalcPhyAddr(unsigned long long LinearAddr) {
+unsigned long long CalcPhyAddr(unsigned long long LinearAddr, unsigned long long cr3) {
   unsigned long long physicalAddr;
 
   unsigned int l4ptIndex = L4_PT_INDEX(LinearAddr);
@@ -111,7 +68,7 @@ unsigned long long CalcPhyAddr(unsigned long long LinearAddr) {
     return 0;
   }
 
-  unsigned long long cr3 = GetCR3();
+  // unsigned long long cr3 = GetCR3();
 
   struct L4PTEntry *l4ptBase = (struct L4PTEntry *)cr3;
   struct L4PTEntry l4ptEntry = l4ptBase[l4ptIndex];
@@ -123,7 +80,7 @@ unsigned long long CalcPhyAddr(unsigned long long LinearAddr) {
   struct L3PTEntry *l3ptBase = (struct L3PTEntry *)(l4ptEntry.L3PTPhysAddr << 12);
   struct L3PTEntry l3ptEntry = l3ptBase[l3ptIndex];
   if (l3ptEntry.Present != 1) {
-    puts("\nNOT PRESENT 3\n");
+    puts("NOT PRESENT 3\n");
     return 0;
   }
 

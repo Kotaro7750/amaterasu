@@ -2,10 +2,11 @@
  * @file fat.c
  * @brief FATファイルシステムの処理
  */
-#include <fat.h>
 #include <ata.h>
+#include <fat.h>
 #include <file.h>
 #include <graphic.h>
+#include <kHeap.h>
 #include <pic.h>
 #include <scheduler.h>
 #include <syscall.h>
@@ -15,10 +16,10 @@ struct Drive drives[4];
 struct Partition partitions[1];
 
 void DriveInit() {
+  unsigned char *buffer = (unsigned char *)kmalloc(512);
   for (int i = 0; i < 4; i++) {
     if (drives[i].isValid) {
-      unsigned char buffer[512];
-      Syscall(SYSCALL_ATA_READ, 0, 512, (unsigned long long)buffer);
+      ATARead(0, 512, buffer, 1);
 
       drives[i].MBR.id = *(unsigned int *)(buffer + 0x1b8);
       for (int partition = 0; partition < 4; partition++) {
@@ -32,10 +33,11 @@ void DriveInit() {
     }
   }
 
-  unsigned char buffer[512];
-  Syscall(SYSCALL_ATA_READ, drives[0].MBR.partitionTables[0].startLBA, 512, (unsigned long long)buffer);
+  // Syscall(SYSCALL_ATA_READ, drives[0].MBR.partitionTables[0].startLBA, 512, (unsigned long long)buffer);
+  ATARead(drives[0].MBR.partitionTables[0].startLBA, 512, buffer, 1);
 
   ParseBootRecord(buffer, drives[0].MBR.partitionTables[0].startLBA);
+  kfree((unsigned long long)buffer);
 }
 
 void ParseBootRecord(unsigned char BRsector[512], unsigned int startLBA) {

@@ -2,7 +2,6 @@
  * @file syscall.c
  * @brief システムコール処理
  */
-#include <syscall.h>
 #include <ata.h>
 #include <fat.h>
 #include <file.h>
@@ -11,6 +10,7 @@
 #include <paging.h>
 #include <pic.h>
 #include <process.h>
+#include <syscall.h>
 
 void SyscallHandlerASM(void);
 
@@ -24,31 +24,34 @@ void SyscallInit() {
 /**
  * @brief システムコールによるソフトウェア割り込みのハンドラ
  */
-unsigned long long
-SyscallHandler(unsigned long long syscallId, unsigned long long arg1, unsigned long long arg2, unsigned long long arg3 __attribute__((unused))) {
+unsigned long long SyscallHandler(unsigned long long syscallId,
+                                  unsigned long long rsp,
+                                  unsigned long long arg1,
+                                  unsigned long long arg2,
+                                  unsigned long long arg3 __attribute__((unused))) {
   unsigned long long ret;
 
   switch (syscallId) {
   case SYSCALL_READ:
-    ret = ReadFile((struct File *)arg1, (unsigned char *)arg2);
+    ret = ReadFile((struct File *)arg1, (unsigned char *)arg2, 0);
     break;
   case SYSCALL_PUT:
     putc((char)arg1);
     break;
   case SYSCALL_OPEN:
-    ret = GetFileInfo((char *)arg1, (struct File *)arg2);
-    break;
-  case SYSCALL_PHYSADDR:
-    ret = CalcPhyAddr(arg1);
+    ret = GetFileInfo((char *)arg1, (struct File *)arg2, 0);
     break;
   case SYSCALL_EXEC:
-    execHandler((char *)arg1);
+    sysExec(rsp, (char *)arg1);
     break;
   case SYSCALL_EXIT:
     exitHandler(arg1);
     break;
   case SYSCALL_ATA_READ:
-    ret = ATARead((unsigned int)arg1, (int)arg2, (unsigned char *)arg3);
+    ret = ATARead((unsigned int)arg1, (int)arg2, (unsigned char *)arg3, 0);
+    break;
+  case SYSCALL_FORK:
+    ret = sysFork(rsp);
     break;
   }
 
@@ -62,9 +65,9 @@ SyscallHandler(unsigned long long syscallId, unsigned long long arg1, unsigned l
 unsigned long long Syscall(unsigned long long syscallId, unsigned long long arg1, unsigned long long arg2, unsigned long long arg3) {
   unsigned long long ret;
   asm volatile("movq %[syscallId], %%rdi\n"
-               "movq %[arg1], %%rsi\n"
-               "movq %[arg2], %%rdx\n"
-               "movq %[arg3], %%rcx\n"
+               "movq %[arg1], %%rdx\n"
+               "movq %[arg2], %%rcx\n"
+               "movq %[arg3], %%r8\n"
                "int $0x80\n"
                "movq %%rax, %[ret]"
                : [ ret ] "=r"(ret)

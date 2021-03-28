@@ -2,96 +2,81 @@
  * @file process.c
  * @brief プロセスの生成，削除に関連する処理
  */
-#include <process.h>
 #include <elf.h>
 #include <file.h>
 #include <graphic.h>
 #include <hpet.h>
 #include <kHeap.h>
+#include <list.h>
 #include <paging.h>
 #include <physicalMemory.h>
+#include <pic.h>
+#include <process.h>
 #include <scheduler.h>
+#include <syscall.h>
 #include <util.h>
 #include <x86_64.h>
 
-/**
- * @brief 新しいプロセスを従来プロセスと同等に扱うために，タイマー割り込みによって中断した時点でのスタックを再現する
- */
-unsigned long long SetUpStack(unsigned long long setUpStackBase, unsigned long long processStackBase, struct Registers *registers) {
-  unsigned long long *sp = (unsigned long long *)setUpStackBase;
+struct Process *currentProcess;
 
-  //----------
-  // for IRET
-  //----------
-  // push SS
-  *sp = registers->ds;
-  --sp;
+struct List processList;
 
-  // push old RSP
-  *sp = processStackBase;
-  --sp;
+void return_from_sys_fork(void);
 
-  // push RFLAGS
+static unsigned long long SetUpKernelStack(struct Registers *registers, unsigned long long kernelStackBase) {
+  unsigned long long *sp = (unsigned long long *)kernelStackBase;
+
+  *sp = registers->ss;
+  sp--;
+  *sp = registers->rsp;
+  sp--;
   *sp = registers->rflags;
-  --sp;
-
-  // push CS
+  sp--;
   *sp = registers->cs;
-  --sp;
-
-  // push RIP
+  sp--;
   *sp = registers->rip;
-  --sp;
-
-  *sp = registers->rcx;
-  --sp;
-  *sp = registers->rax;
-  --sp;
-  *sp = registers->rdx;
-  --sp;
-  *sp = registers->rbx;
-  --sp;
-  *sp = registers->rbp;
-  --sp;
-  *sp = registers->rsi;
-  --sp;
+  sp--;
+  *sp = registers->r15;
+  sp--;
+  *sp = registers->r14;
+  sp--;
+  *sp = registers->r13;
+  sp--;
+  *sp = registers->r12;
+  sp--;
+  *sp = registers->r11;
+  sp--;
+  *sp = registers->r10;
+  sp--;
+  *sp = registers->r9;
+  sp--;
+  *sp = registers->r8;
+  sp--;
   *sp = registers->rdi;
-  --sp;
-
-  //----------
-  // HPET handler frame
-  //----------
-  *sp = (unsigned long long)HPETHandlerRet;
-  --sp;
-
-  *sp = processStackBase;
-  unsigned long long IRQHandlerFrame = (unsigned long long)sp;
-  --sp;
-
-  //----------
-  // schedule frame
-  //----------
-  *sp = (unsigned long long)ScheduleRet;
-  --sp;
-
-  *sp = IRQHandlerFrame;
-  unsigned long long ScheduleFrame = (unsigned long long)sp;
-  --sp;
-
-  *sp = ScheduleFrame;
-  --sp;
-
-  // RFLAGS
-  *sp = 0x2;
+  sp--;
+  *sp = registers->rsi;
+  sp--;
+  *sp = registers->rbp;
+  sp--;
+  *sp = registers->rdx;
+  sp--;
+  *sp = registers->rcx;
+  sp--;
+  *sp = registers->rbx;
+  sp--;
+  *sp = registers->rax;
 
   return (unsigned long long)sp;
-}
+};
 
 /**
  * @brief 新しいプロセス用のページテーブルを構築する
  */
 unsigned long long SetUpPageTable(unsigned long long textSegmentPageFrame, unsigned long long processStackBase) {
   struct L3PTEntry1GB *l3ptBaseLower = (struct L3PTEntry1GB *)AllocatePageFrames(1);
+  if (l3ptBaseLower == 0) {
+    return 0;
+  }
   for (int i = 0; i < 512; i++) {
     if (i < 5) {
       l3ptBaseLower[i].Present = 1;
@@ -116,6 +101,9 @@ unsigned long long SetUpPageTable(unsigned long long textSegmentPageFrame, unsig
   }
 
   struct L1PTEntry *l1ptBaseHigher = (struct L1PTEntry *)AllocatePageFrames(1);
+  if (l1ptBaseHigher == 0) {
+    return 0;
+  }
   for (int i = 0; i < 512; i++) {
     if (i == 510) {
       l1ptBaseHigher[i].Present = 1;
@@ -153,6 +141,9 @@ unsigned long long SetUpPageTable(unsigned long long textSegmentPageFrame, unsig
   }
 
   struct L2PTEntry *l2ptBaseHigher = (struct L2PTEntry *)AllocatePageFrames(1);
+  if (l2ptBaseHigher == 0) {
+    return 0;
+  }
   for (int i = 0; i < 512; i++) {
     if (i == 511) {
       l2ptBaseHigher[i].Present = 1;
@@ -173,6 +164,9 @@ unsigned long long SetUpPageTable(unsigned long long textSegmentPageFrame, unsig
   }
 
   struct L3PTEntry *l3ptBaseHigher = (struct L3PTEntry *)AllocatePageFrames(1);
+  if (l3ptBaseHigher == 0) {
+    return 0;
+  }
   for (int i = 0; i < 512; i++) {
     if (i == 511) {
       l3ptBaseHigher[i].Present = 1;
@@ -193,6 +187,9 @@ unsigned long long SetUpPageTable(unsigned long long textSegmentPageFrame, unsig
   }
 
   struct L4PTEntry *l4ptBase = (struct L4PTEntry *)AllocatePageFrames(1);
+  if (l4ptBase == 0) {
+    return 0;
+  }
   for (int i = 0; i < 512; i++) {
     if (i == 0) {
       l4ptBase[i].Present = 1;
@@ -228,9 +225,53 @@ unsigned long long SetUpPageTable(unsigned long long textSegmentPageFrame, unsig
   return (unsigned long long)l4ptBase;
 }
 
-int execHandler(char *filename) {
+static struct ProcessMemory *CopyProcessMemory(char cloneFlags, struct ProcessMemory *originalPm) {
+  struct ProcessMemory *pm = (struct ProcessMemory *)kmalloc(sizeof(struct ProcessMemory));
+  memcpy(pm, originalPm, sizeof(struct ProcessMemory));
+
+  pm->userStackPageFrame = AllocatePageFrames(1);
+  pm->kernelStackPageFrame = AllocatePageFrames(1);
+
+  if (cloneFlags & CLONE_VM) {
+    pm->textSegmentPageFrame = originalPm->textSegmentPageFrame;
+  } else {
+    pm->textSegmentPageFrame = AllocatePageFrames(1);
+
+    memcpy((void *)pm->textSegmentPageFrame, (void *)originalPm->textSegmentPageFrame, PAGE_SIZE);
+    memcpy((void *)pm->kernelStackPageFrame, (void *)originalPm->kernelStackPageFrame, PAGE_SIZE);
+    memcpy((void *)pm->userStackPageFrame, (void *)originalPm->userStackPageFrame, PAGE_SIZE);
+  }
+  pm->l4PageTableBase = (struct L4PTEntry *)SetUpPageTable(pm->textSegmentPageFrame, pm->userStackPageFrame - 8 + PAGE_SIZE);
+
+  return pm;
+}
+
+static struct ThreadInfo *CopyThreadInfo(char cloneFlags, struct ThreadInfo *originalTi, struct Process *process) {
+  struct ThreadInfo *ti = (struct ThreadInfo *)kmalloc(sizeof(struct ThreadInfo));
+  memcpy(ti, originalTi, sizeof(struct ThreadInfo));
+  ti->process = process;
+
+  return ti;
+}
+
+static struct Process *CopyProcess(char cloneFlags, struct Process *original) {
+  struct Process *p = (struct Process *)kmalloc(sizeof(struct Process));
+  memcpy(p, original, sizeof(struct Process));
+
+  ListAdd(&(p->processes), &(original->processes));
+
+  p->pid = NewProcessId(original->pid);
+
+  p->processMemory = CopyProcessMemory(cloneFlags, original->processMemory);
+
+  p->threadInfo = CopyThreadInfo(cloneFlags, original->threadInfo, p);
+
+  return p;
+}
+
+int sysExec(unsigned long long rsp, char *filename) {
   struct File file;
-  if (GetFileInfo(filename, &file) == 0) {
+  if (GetFileInfo(filename, &file, 1) == 0) {
     return -1;
   }
 
@@ -239,43 +280,84 @@ int execHandler(char *filename) {
     return -1;
   }
 
-  if (ReadFile(&file, buffer) != file.size) {
+  if (ReadFile(&file, buffer, 1) != file.size) {
     return -1;
   }
 
+  // parse ELF header
   struct Elf64_Ehdr *ehdr = (struct Elf64_Ehdr *)buffer;
-
   unsigned long long entryPoint = ehdr->e_entry;
-  Elf64_Off e_phoff = ehdr->e_phoff;
+  struct Elf64_Phdr *phdr = (struct Elf64_Phdr *)(buffer + ehdr->e_phoff);
 
-  struct Elf64_Phdr *phdr = (struct Elf64_Phdr *)(buffer + e_phoff);
-
-  unsigned long long textSegmentAddress = phdr[0].p_vaddr;
   unsigned long long textSegmentSize = phdr[0].p_memsz;
   Elf64_Off textSegmentOffset = phdr[0].p_offset;
 
-  unsigned long long textSegmentPageFrame = AllocatePageFrames(1);
-  memcpy((void *)textSegmentPageFrame, (void *)(buffer + textSegmentOffset), textSegmentSize);
+  // copy .text segment to process's own text segment
+  struct ProcessMemory *processMemory = currentProcess->processMemory;
+  memcpy((void *)processMemory->textSegmentPageFrame, (void *)(buffer + textSegmentOffset), textSegmentSize);
 
-  int newTaskId = NewProcessId();
-
-  // prepare stack
-  unsigned long long stackBase = (unsigned long long)(AllocatePageFrames(1) + PAGE_SIZE - 8);
-  unsigned long long ring0stackBase = (unsigned long long)(AllocatePageFrames(1) + PAGE_SIZE - 8);
-  taskList[newTaskId].ring0stackBase = ring0stackBase;
-
+  // iretで戻るための情報を書き換える．rspは初期化，レジスタは引数を除き初期化,ripはエントリポイント,CS,SSは必ずユーザー
   struct Registers registers;
-  memset(&registers, 0, sizeof(registers));
-  registers.cs = CS_SEGMENT_SELECTOR_USER;
-  registers.ds = SS_SEGMENT_SELECTOR_USER;
-  registers.rflags = 0x202;
+  memset(&registers, 0, sizeof(struct Registers));
   registers.rip = entryPoint;
+  registers.rsp = 0xfffffffffffffff8;
+  registers.rbp = registers.rsp;
+  registers.rflags = 0x202;
+  registers.cs = CS_SEGMENT_SELECTOR_USER;
+  registers.ss = SS_SEGMENT_SELECTOR_USER;
+  registers.ds = SS_SEGMENT_SELECTOR_USER;
+  registers.ring0rsp = processMemory->kernelStackPageFrame - 8 + PAGE_SIZE;
 
-  taskList[newTaskId].rsp = SetUpStack(ring0stackBase, 0xfffffffffffffff8, &registers);
+  unsigned long long *sp = (unsigned long long *)rsp;
+  // TODO 汚い
+  *sp = registers.rax;
+  sp++;
+  *sp = registers.rbx;
+  sp++;
+  *sp = registers.rcx;
+  sp++;
+  *sp = registers.rdx;
+  sp++;
+  *sp = registers.rbp;
+  sp++;
+  *sp = registers.rsi;
+  sp++;
+  *sp = registers.rdi;
+  sp++;
+  *sp = registers.r8;
+  sp++;
+  *sp = registers.r9;
+  sp++;
+  *sp = registers.r10;
+  sp++;
+  *sp = registers.r11;
+  sp++;
+  *sp = registers.r12;
+  sp++;
+  *sp = registers.r13;
+  sp++;
+  *sp = registers.r14;
+  sp++;
+  *sp = registers.r15;
+  sp++;
+  *sp = registers.rip;
+  sp++;
+  *sp = registers.cs;
+  sp++;
+  *sp = registers.rflags;
+  sp++;
+  *sp = registers.rsp;
+  sp++;
+  *sp = registers.ss;
 
-  taskList[newTaskId].isValid = 1;
-  taskList[newTaskId].isStarted = 1;
-  taskList[newTaskId].cr3 = SetUpPageTable(textSegmentPageFrame, stackBase);
+  SendEndOfInterrupt(SYSCALL_INTERRUPT_NUM);
+  SwitchKernelStack(processMemory->kernelStackPageFrame - 8 + PAGE_SIZE);
+
+
+  kfree((unsigned long long)buffer);
+
+  asm volatile("mov %[rsp], %%rsp" ::[rsp] "r"(rsp));
+  asm volatile("jmp return_from_sys_exec");
 
   return 0;
 }
@@ -284,33 +366,42 @@ int execHandler(char *filename) {
  * @brief exitシステムコールのハンドラ
  * @param[in] status 未使用
  */
-void exitHandler(unsigned long long status) {
-  puts("\n");
-  puth(currentTaskId);
-  puts("\n");
-  while (1) {
-  }
-}
+void exitHandler(unsigned long long status) {}
 
 /**
  * @brief 新しいプロセスを生成する
  */
-void DoFork(char shareVM, struct Registers *registers) {
-  int newTaskId = NewProcessId();
+int DoFork(char shareVM, struct Registers *registers, unsigned long long rsp) {
+  struct Process *child;
+  struct Process *parent = currentProcess;
 
   if (shareVM) {
-    taskList[newTaskId].cr3 = taskList[currentTaskId].cr3;
+    child = CopyProcess(CLONE_VM, parent);
+    child->parent = parent;
 
-    unsigned long long stackBase = (unsigned long long)(AllocatePageFrames(1) + PAGE_SIZE - 8);
+    registers->rbp = child->processMemory->kernelStackPageFrame - 8 + PAGE_SIZE;
+    registers->rsp = child->processMemory->kernelStackPageFrame - 8 + PAGE_SIZE;
 
-    taskList[newTaskId].rsp = SetUpStack(stackBase, stackBase, registers);
-    taskList[newTaskId].ring0stackBase = stackBase;
+    child->threadInfo->registers.ring0rsp = SetUpKernelStack(registers, child->processMemory->kernelStackPageFrame - 8 + PAGE_SIZE);
+    child->threadInfo->registers.rsp = child->threadInfo->registers.ring0rsp;
   } else {
-  }
+    child = CopyProcess(0, currentProcess);
+    child->parent = parent;
 
-  taskList[newTaskId].isValid = 1;
-  taskList[newTaskId].isStarted = 1;
+    // returns 0 to child process
+    unsigned long long childRsp = child->processMemory->kernelStackPageFrame + (rsp - parent->processMemory->kernelStackPageFrame);
+    ((struct Registers *)childRsp)->rax = 0;
+
+    child->threadInfo->registers.ring0rsp = childRsp;
+    child->threadInfo->registers.rsp = child->threadInfo->registers.ring0rsp;
+  }
+  child->threadInfo->registers.rip = (unsigned long long)return_from_sys_fork;
+  child->threadInfo->registers.cr3 = (unsigned long long)child->processMemory->l4PageTableBase;
+
+  return child->pid;
 }
+
+int sysFork(unsigned long long rsp) { return DoFork(0, 0x0, rsp); }
 
 void KernelThread(unsigned long long fn) {
   struct Registers registers;
@@ -321,5 +412,36 @@ void KernelThread(unsigned long long fn) {
   registers.cs = CS_SEGMENT_SELECTOR_KERNEL;
   registers.rflags = 0x202;
 
-  DoFork(1, &registers);
+  DoFork(1, &registers, 0x0);
+}
+
+void ProcessInit() {
+  LIST_INIT(processList);
+
+  currentProcess = (struct Process *)kmalloc(sizeof(struct Process));
+  ListAdd(&(currentProcess->processes), &processList);
+
+  currentProcess->pid = PID_INITIAL;
+  currentProcess->parent = 0x0;
+  currentProcess->state = PROCESS_RUNNING;
+
+  // Allocate process own memory
+  struct ProcessMemory *processMemory = (struct ProcessMemory *)kmalloc(sizeof(struct ProcessMemory));
+
+  processMemory->textSegmentPageFrame = AllocatePageFrames(1);
+  processMemory->kernelStackPageFrame = AllocatePageFrames(1);
+  processMemory->userStackPageFrame = AllocatePageFrames(1);
+  processMemory->l4PageTableBase =
+      (struct L4PTEntry *)SetUpPageTable(processMemory->textSegmentPageFrame, processMemory->userStackPageFrame - 8 + PAGE_SIZE);
+
+  SwitchKernelStack(processMemory->kernelStackPageFrame - 8 + PAGE_SIZE);
+
+  // Set up thread infomation
+  struct ThreadInfo *threadInfo = (struct ThreadInfo *)kmalloc(sizeof(struct ThreadInfo));
+
+  threadInfo->process = currentProcess;
+  threadInfo->registers.ring0rsp = processMemory->kernelStackPageFrame - 8 + PAGE_SIZE;
+
+  currentProcess->processMemory = processMemory;
+  currentProcess->threadInfo = threadInfo;
 }

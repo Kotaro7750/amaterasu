@@ -3,10 +3,10 @@
  * @brief 割り込み関連の処理
  */
 
-#include <interrupt.h>
 #include <graphic.h>
-#include <x86_64.h>
+#include <interrupt.h>
 #include <syscall.h>
+#include <x86_64.h>
 
 /**
  * @brief IDTの実体
@@ -36,7 +36,7 @@ void SetInterruptDescriptor(unsigned char interruptNumber, void *handler, unsign
   // TODO this magic number should be MACRO
   if (interruptNumber == SYSCALL_INTERRUPT_NUM) {
     idt[interruptNumber].DPL = 3;
-  }else {
+  } else {
     idt[interruptNumber].DPL = 0;
   }
   idt[interruptNumber].P = present;
@@ -71,23 +71,50 @@ void DoubleFaultHandler(void) {
   }
 }
 
-void GeneralProtectionFaultHandler(void) {
-  unsigned long long errorCode;
-  unsigned long long rbp;
-  asm volatile("mov %%rbp, %[Rbp]" : [ Rbp ] "=r"(rbp));
-  errorCode = *(unsigned long long *)(rbp + 16);
+void GeneralProtectionFaultHandler(unsigned long long rsp) {
+  unsigned long long errorCode = *(unsigned long long *)rsp;
 
   char external = errorCode & 0x1;
   char tbl = (errorCode >> 1) & 0x3;
   short index = (errorCode >> 3) & 0x1fff;
 
   puts("GENERAL PROTECTION FAULT\n");
+
   puts("EXTERNAL: ");
   puth(external);
-  puts("\r\nTBL: ");
+  puts("\n");
+
+  puts("TBL: ");
   puth(tbl);
-  puts("\r\nINDEX: ");
+  puts("\n");
+
+  puts("INDEX: ");
   puth(index);
+  puts("\n");
+
+  puts("RIP: ");
+  puth(*(unsigned long long *)(rsp + 8));
+  puts("\n");
+
+  puts("CS: ");
+  puth(*(unsigned long long *)(rsp + 16));
+  puts("\n");
+
+  puts("RFLAGS: ");
+  puth(*(unsigned long long *)(rsp + 24));
+  puts("\n");
+
+  puts("RSP: ");
+  puth(*(unsigned long long *)(rsp + 32));
+  puts("\n");
+
+  unsigned long long prevRsp = *(unsigned long long *)(rsp + 32);
+
+  for (int i = 0; i < 5; i++) {
+    puth(*(unsigned long long *)prevRsp);
+    puts("\n");
+    prevRsp -= 8;
+  }
 
   while (1) {
     CpuHalt();

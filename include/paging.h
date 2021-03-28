@@ -108,7 +108,7 @@ struct L1PTEntry {
 
 void PagingInit(void);
 void CausePageFoult(void);
-unsigned long long CalcPhyAddr(unsigned long long LinearAddr);
+unsigned long long CalcPhyAddr(unsigned long long LinearAddr, unsigned long long cr3);
 void _dumpPTEntry(struct L2PTEntry2MB l1ptEntry);
 void _dumpPageTableInfo();
 
