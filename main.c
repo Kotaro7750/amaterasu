@@ -18,6 +18,7 @@
 #include <physicalMemory.h>
 #include <pic.h>
 #include <process.h>
+#include <queue.h>
 #include <scheduler.h>
 #include <syscall.h>
 #include <x86_64.h>
@@ -34,35 +35,11 @@ struct __attribute__((packed)) PlatformInfo {
 };
 
 /**
- * @brief Aを出力し続ける
+ * @brief 文字を出力し続ける
  */
-void taskA() {
+void taskX(char c) {
   while (1) {
-    putc('A');
-    volatile unsigned long long wait = 10000000;
-    while (wait--)
-      ;
-  }
-}
-
-/**
- * @brief Bを出力し続ける
- */
-void taskB() {
-  while (1) {
-    Syscall(SYSCALL_PUT, 'B', 0, 0);
-    volatile unsigned long long wait = 10000000;
-    while (wait--)
-      ;
-  }
-}
-
-/**
- * @brief Cを出力し続ける
- */
-void taskC() {
-  while (1) {
-    putc('C');
+    putc(c);
     volatile unsigned long long wait = 10000000;
     while (wait--)
       ;
@@ -96,10 +73,10 @@ void start_kernel(void *_t __attribute__((unused)), struct PlatformInfo *_pi, st
   EnableCPUInterrupt();
 
   DriveInit();
-  KernelThread((unsigned long long)taskC);
-  SchedulerStart();
+  // KernelThread((unsigned long long)taskX, 'X');
+  // SchedulerStart();
 
-  Syscall(SYSCALL_EXEC, "TEST", 0, 0);
+  // Syscall(SYSCALL_EXEC, "TEST", 0, 0);
 
   while (1)
     CpuHalt();

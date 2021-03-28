@@ -23,56 +23,18 @@ struct List processList;
 
 void return_from_sys_fork(void);
 
-static unsigned long long SetUpKernelStack(struct Registers *registers, unsigned long long kernelStackBase) {
-  unsigned long long *sp = (unsigned long long *)kernelStackBase;
-
-  *sp = registers->ss;
-  sp--;
-  *sp = registers->rsp;
-  sp--;
-  *sp = registers->rflags;
-  sp--;
-  *sp = registers->cs;
-  sp--;
-  *sp = registers->rip;
-  sp--;
-  *sp = registers->r15;
-  sp--;
-  *sp = registers->r14;
-  sp--;
-  *sp = registers->r13;
-  sp--;
-  *sp = registers->r12;
-  sp--;
-  *sp = registers->r11;
-  sp--;
-  *sp = registers->r10;
-  sp--;
-  *sp = registers->r9;
-  sp--;
-  *sp = registers->r8;
-  sp--;
-  *sp = registers->rdi;
-  sp--;
-  *sp = registers->rsi;
-  sp--;
-  *sp = registers->rbp;
-  sp--;
-  *sp = registers->rdx;
-  sp--;
-  *sp = registers->rcx;
-  sp--;
-  *sp = registers->rbx;
-  sp--;
-  *sp = registers->rax;
-
-  return (unsigned long long)sp;
-};
+static unsigned long long SetUpKernelStack(struct InterruptStack *registers, unsigned long long kernelStackBase) {
+  unsigned long long sp = kernelStackBase;
+  sp -= sizeof(struct InterruptStack);
+  sp += 8;
+  *(struct InterruptStack *)sp = *registers;
+  return sp;
+}
 
 /**
  * @brief 新しいプロセス用のページテーブルを構築する
  */
-unsigned long long SetUpPageTable(unsigned long long textSegmentPageFrame, unsigned long long processStackBase) {
+static struct L4PTEntry *SetUpPageTable(unsigned long long textSegmentPageFrame, unsigned long long processStackBase) {
   struct L3PTEntry1GB *l3ptBaseLower = (struct L3PTEntry1GB *)AllocatePageFrames(1);
   if (l3ptBaseLower == 0) {
     return 0;
@@ -222,7 +184,7 @@ unsigned long long SetUpPageTable(unsigned long long textSegmentPageFrame, unsig
     }
   }
 
-  return (unsigned long long)l4ptBase;
+  return l4ptBase;
 }
 
 static struct ProcessMemory *CopyProcessMemory(char cloneFlags, struct ProcessMemory *originalPm) {
@@ -241,7 +203,7 @@ static struct ProcessMemory *CopyProcessMemory(char cloneFlags, struct ProcessMe
     memcpy((void *)pm->kernelStackPageFrame, (void *)originalPm->kernelStackPageFrame, PAGE_SIZE);
     memcpy((void *)pm->userStackPageFrame, (void *)originalPm->userStackPageFrame, PAGE_SIZE);
   }
-  pm->l4PageTableBase = (struct L4PTEntry *)SetUpPageTable(pm->textSegmentPageFrame, pm->userStackPageFrame - 8 + PAGE_SIZE);
+  pm->l4PageTableBase = SetUpPageTable(pm->textSegmentPageFrame, pm->userStackPageFrame - 8 + PAGE_SIZE);
 
   return pm;
 }
@@ -297,16 +259,14 @@ int sysExec(unsigned long long rsp, char *filename) {
   memcpy((void *)processMemory->textSegmentPageFrame, (void *)(buffer + textSegmentOffset), textSegmentSize);
 
   // iretで戻るための情報を書き換える．rspは初期化，レジスタは引数を除き初期化,ripはエントリポイント,CS,SSは必ずユーザー
-  struct Registers registers;
-  memset(&registers, 0, sizeof(struct Registers));
+  struct InterruptStack registers;
+  memset(&registers, 0, sizeof(struct InterruptStack));
   registers.rip = entryPoint;
   registers.rsp = 0xfffffffffffffff8;
   registers.rbp = registers.rsp;
   registers.rflags = 0x202;
   registers.cs = CS_SEGMENT_SELECTOR_USER;
   registers.ss = SS_SEGMENT_SELECTOR_USER;
-  registers.ds = SS_SEGMENT_SELECTOR_USER;
-  registers.ring0rsp = processMemory->kernelStackPageFrame - 8 + PAGE_SIZE;
 
   unsigned long long *sp = (unsigned long long *)rsp;
   // TODO 汚い
@@ -353,7 +313,6 @@ int sysExec(unsigned long long rsp, char *filename) {
   SendEndOfInterrupt(SYSCALL_INTERRUPT_NUM);
   SwitchKernelStack(processMemory->kernelStackPageFrame - 8 + PAGE_SIZE);
 
-
   kfree((unsigned long long)buffer);
 
   asm volatile("mov %[rsp], %%rsp" ::[rsp] "r"(rsp));
@@ -362,55 +321,59 @@ int sysExec(unsigned long long rsp, char *filename) {
   return 0;
 }
 
+void sysWaitPid(){
+}
+
 /**
  * @brief exitシステムコールのハンドラ
  * @param[in] status 未使用
  */
-void exitHandler(unsigned long long status) {}
+void sysExit() {
+  currentProcess->state = PROCESS_ZOMBIE;
+  Schedule();
+}
 
 /**
  * @brief 新しいプロセスを生成する
  */
-int DoFork(char shareVM, struct Registers *registers, unsigned long long rsp) {
+int DoFork(char shareVM, struct InterruptStack *registers, unsigned long long rsp) {
   struct Process *child;
   struct Process *parent = currentProcess;
+  child = CopyProcess(shareVM, currentProcess);
+  child->parent = parent;
 
   if (shareVM) {
-    child = CopyProcess(CLONE_VM, parent);
-    child->parent = parent;
-
     registers->rbp = child->processMemory->kernelStackPageFrame - 8 + PAGE_SIZE;
     registers->rsp = child->processMemory->kernelStackPageFrame - 8 + PAGE_SIZE;
 
-    child->threadInfo->registers.ring0rsp = SetUpKernelStack(registers, child->processMemory->kernelStackPageFrame - 8 + PAGE_SIZE);
-    child->threadInfo->registers.rsp = child->threadInfo->registers.ring0rsp;
+    child->threadInfo->ring0rsp = SetUpKernelStack(registers, child->processMemory->kernelStackPageFrame - 8 + PAGE_SIZE);
   } else {
-    child = CopyProcess(0, currentProcess);
-    child->parent = parent;
-
     // returns 0 to child process
     unsigned long long childRsp = child->processMemory->kernelStackPageFrame + (rsp - parent->processMemory->kernelStackPageFrame);
-    ((struct Registers *)childRsp)->rax = 0;
+    ((struct InterruptStack *)childRsp)->rax = 0;
 
-    child->threadInfo->registers.ring0rsp = childRsp;
-    child->threadInfo->registers.rsp = child->threadInfo->registers.ring0rsp;
+    child->threadInfo->ring0rsp = childRsp;
   }
-  child->threadInfo->registers.rip = (unsigned long long)return_from_sys_fork;
-  child->threadInfo->registers.cr3 = (unsigned long long)child->processMemory->l4PageTableBase;
+
+  child->threadInfo->rsp = child->threadInfo->ring0rsp;
+  child->threadInfo->rip = (unsigned long long)return_from_sys_fork;
+  child->threadInfo->cr3 = (unsigned long long)child->processMemory->l4PageTableBase;
 
   return child->pid;
 }
 
-int sysFork(unsigned long long rsp) { return DoFork(0, 0x0, rsp); }
+int sysFork(unsigned long long rsp) { return DoFork(0, (struct InterruptStack *)rsp, rsp); }
 
-void KernelThread(unsigned long long fn) {
-  struct Registers registers;
+void KernelThread(unsigned long long fn, unsigned long long arg1) {
+  struct InterruptStack registers;
 
-  memset(&registers, 0, sizeof(struct Registers));
+  memset(&registers, 0, sizeof(struct InterruptStack));
 
   registers.rip = fn;
   registers.cs = CS_SEGMENT_SELECTOR_KERNEL;
   registers.rflags = 0x202;
+
+  registers.rdi = arg1;
 
   DoFork(1, &registers, 0x0);
 }
@@ -431,8 +394,7 @@ void ProcessInit() {
   processMemory->textSegmentPageFrame = AllocatePageFrames(1);
   processMemory->kernelStackPageFrame = AllocatePageFrames(1);
   processMemory->userStackPageFrame = AllocatePageFrames(1);
-  processMemory->l4PageTableBase =
-      (struct L4PTEntry *)SetUpPageTable(processMemory->textSegmentPageFrame, processMemory->userStackPageFrame - 8 + PAGE_SIZE);
+  processMemory->l4PageTableBase = SetUpPageTable(processMemory->textSegmentPageFrame, processMemory->userStackPageFrame - 8 + PAGE_SIZE);
 
   SwitchKernelStack(processMemory->kernelStackPageFrame - 8 + PAGE_SIZE);
 
@@ -440,7 +402,7 @@ void ProcessInit() {
   struct ThreadInfo *threadInfo = (struct ThreadInfo *)kmalloc(sizeof(struct ThreadInfo));
 
   threadInfo->process = currentProcess;
-  threadInfo->registers.ring0rsp = processMemory->kernelStackPageFrame - 8 + PAGE_SIZE;
+  threadInfo->ring0rsp = processMemory->kernelStackPageFrame - 8 + PAGE_SIZE;
 
   currentProcess->processMemory = processMemory;
   currentProcess->threadInfo = threadInfo;

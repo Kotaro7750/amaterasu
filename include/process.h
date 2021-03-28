@@ -17,6 +17,7 @@
 enum ProcessState {
   PROCESS_RUNNING,
   PROCESS_SLEEP,
+  PROCESS_ZOMBIE,
 };
 
 struct ProcessMemory {
@@ -28,7 +29,10 @@ struct ProcessMemory {
 
 struct Process;
 struct ThreadInfo {
-  struct Registers registers;
+  unsigned long long rsp;
+  unsigned long long ring0rsp;
+  unsigned long long cr3;
+  unsigned long long rip;
   struct Process *process;
 };
 
@@ -44,9 +48,9 @@ struct Process {
 extern struct Process *currentProcess;
 extern struct List processList;
 
-void exitHandler(unsigned long long status);
-void KernelThread(unsigned long long fn);
+void KernelThread(unsigned long long fn, unsigned long long arg1);
 void ProcessInit();
 int sysExec(unsigned long long rsp, char *filename);
+void sysExit();
 int sysFork(unsigned long long rsp);
 #endif

@@ -10,6 +10,8 @@ void entry() {
   // 子
   if (pid == 0) {
     c = 'A';
+    Syscall(SYSCALL_PUT, c, 0, 0);
+    Syscall(SYSCALL_EXIT, 0, 0, 0);
   } else {
     // 親
     c = 'Z';

@@ -57,10 +57,10 @@ void Schedule() {
   asm volatile("pushf");
 
   // save rsp into prev->threadInfo->registers.rsp
-  asm volatile("mov %rsp, 0x90(%rdi)");
+  asm volatile("mov %rsp, 0x0(%rdi)");
 
   // save rip for ret
-  asm volatile("movq $.load, 0x78(%rdi)");
+  asm volatile("movq $.load, 0x18(%rdi)");
 
   // --------------------
   // Task Switch
@@ -69,16 +69,16 @@ void Schedule() {
   asm volatile("mov %[value], %%cr3" ::[value] "a"(next->processMemory->l4PageTableBase));
 
   // load rsp from next->threadInfo->rsp
-  asm volatile("mov 0x90(%rsi), %rsp");
+  asm volatile("mov 0x0(%rsi), %rsp");
 
   // save rdi
   asm volatile("push %rdi");
 
   // load rip for ret
-  asm volatile("push 0x78(%rsi)");
+  asm volatile("push 0x18(%rsi)");
 
   // switch kernel stack to next->threadInfo->registers.ring0rsp
-  asm volatile("mov 0xb0(%rsi), %rdi");
+  asm volatile("mov 0x8(%rsi), %rdi");
   asm volatile("jmp SwitchKernelStack");
 
   asm volatile(".load:");

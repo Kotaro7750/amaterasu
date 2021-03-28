@@ -45,7 +45,7 @@ unsigned long long SyscallHandler(unsigned long long syscallId,
     sysExec(rsp, (char *)arg1);
     break;
   case SYSCALL_EXIT:
-    exitHandler(arg1);
+    sysExit();
     break;
   case SYSCALL_ATA_READ:
     ret = ATARead((unsigned int)arg1, (int)arg2, (unsigned char *)arg3, 0);

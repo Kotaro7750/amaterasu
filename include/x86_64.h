@@ -66,7 +66,7 @@
  */
 #define SS_SEGMENT_SELECTOR_USER 35
 
-struct Registers {
+struct InterruptStack {
   unsigned long long rax;
   unsigned long long rbx;
   unsigned long long rcx;
@@ -87,9 +87,6 @@ struct Registers {
   unsigned long long rflags;
   unsigned long long rsp;
   unsigned long long ss;
-  unsigned long long ds;
-  unsigned long long cr3;
-  unsigned long long ring0rsp;
 };
 
 extern unsigned long long gdt[7];
